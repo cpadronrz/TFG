@@ -1,0 +1,88 @@
+---
+title: "Evaluación modelo final"
+output: html_document
+date: "2026-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Comenzamos cargando las librerías que vamos a necesitar:
+
+```{r, include=FALSE}
+library(readr)
+library(caret)
+library(pROC)
+library(car)
+library(purrr)
+library(MLmetrics)
+library(tidyr)
+library(ggplot2)
+```
+
+Importamos la base de datos.
+
+```{r}
+datos <- read_csv("bd_final.csv")
+```
+
+Verificamos que esté bien cargada.
+
+```{r}
+str(datos)
+```
+
+Pasamos a factor las variables de tipo char para poder realizar bien el análisis, pues no se cargaron como tal.
+
+```{r}
+datos$Gender <- as.factor(datos$Gender)
+datos$City <- as.factor(datos$City)
+datos$Dietary_Habits <- as.factor(datos$Dietary_Habits)
+datos$Degree <- as.factor(datos$Degree)
+datos$Suicidal_Thoughts <- as.factor(datos$Suicidal_Thoughts)
+datos$Family_History <- as.factor(datos$Family_History)
+```
+
+Comprobamos:
+
+```{r}
+str(datos)
+```
+
+Para que las funciones que aplicaremos funcionen correctamente, se debe codificar la variable objetivo (Depression). Para ello, recurrimos a make.names.
+
+```{r}
+datos$Depression<-as.factor(make.names(datos$Depression))
+```
+
+Realizamos una partición del conjunto de datos en entrenamiento (80%) y prueba (20%). Usamos la semilla 12345 para poder replicar los resultados y, además, tener los mismos conjuntos de entrenamiento y prueba para todos los modelos.
+
+```{r}
+set.seed(12345)
+trainIndex <- createDataPartition(datos$Depression, p=0.8, list=FALSE)
+data_train <- datos[trainIndex,]
+data_test <- datos[-trainIndex,]
+```
+
+Realizamos el modelo ganador para analizar las conclusiones.
+
+```{r}
+modelo1<-glm(Depression~ Age + Academic_Pressure + Study_Satisfaction + Sleep_Duration + Dietary_Habits + Suicidal_Thoughts + Work_Study_Hours + Financial_Stress, data=data_train, family=binomial)
+modelo1$rank
+```
+
+```{r}
+summary(modelo1)
+```
+
+```{r}
+Anova(modelo1, type = "II")
+```
+
+Analizamos los ods ratio.
+
+```{r}
+exp(coef(modelo1))
+```
+

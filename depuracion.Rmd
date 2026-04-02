@@ -1,0 +1,374 @@
+---
+title: "Depuracion"
+author: "Carla"
+date: "2025-09-18"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Cargamos las librerías que vamos a utilizar
+
+```{r}
+library(haven)
+library(readr)
+library(openxlsx)
+```
+
+
+Leer el fichero de datos.
+
+```{r}
+data <- read_csv("student_depresion.csv")
+```
+
+Vamos a modificar el nombre de las variables.
+
+```{r}
+colnames(data)
+```
+
+```{r}
+colnames(data) <- c("Id","Gender","Age","City","Profession","Academic_Pressure",
+                    "Work_Pressure","GPA","Study_Satisfaction","Job_Satisfaction",
+                    "Sleep_Duration","Dietary_Habits","Degree","Suicidal_Thoughts",
+                    "Work_Study_Hours","Financial_Stress","Family_History","Depression")
+
+```
+
+Tipos de variables.
+
+```{r}
+str(data)
+```
+
+Valores de las variables.
+
+```{r}
+summary(data)
+```
+
+# Depuración de la base de datos
+
+Miramos si hay datos faltantes.
+
+```{r}
+data[!complete.cases(data), ]
+```
+
+```{r}
+which(is.na(data[4459,]))
+which(is.na(data[13597,]))
+which(is.na(data[19267,]))
+
+```
+
+```{r}
+colnames(data)[16]
+```
+
+Tienen NA en Financial_Stress únicamente. Vamos a intentar imputar.
+
+Tienen correlación Financial_Stress y academic_pressure?
+
+```{r}
+cor(data$Academic_Pressure,data$Financial_Stress, use='complete.obs')
+```
+
+No existe una correlación clara. Dado que el porcentaje es despreciable, imputaremos usando la media o la mediana.
+
+```{r}
+var(data$Financial_Stress,na.rm=T)
+table(data$Financial_Stress)
+```
+
+Aunque solo son 3 valores los que tenemos missing y no influirá mucho imputar por la media o la mediana, como la variable tiene mucha dispersión, usaremos la mediana.
+
+```{r}
+data$Financial_Stress[which(is.na(data$Financial_Stress))] <- median(data$Financial_Stress,na.rm=T)
+```
+
+Comprobamos que estén corregidos.
+
+```{r}
+data[!complete.cases(data), c("Id","Financial_Stress")]
+```
+
+```{r}
+data[c(4459,13597,19267),16 ]
+
+```
+
+# Recodificación de las variables
+
+```{r}
+str(data)
+```
+
+Comprobamos en qué variables encontramos Others/Other.
+
+```{r}
+others_count <- list()
+
+qualitative_cols <- names(data)[sapply(data, function(x) is.character(x) | is.factor(x))]
+
+for (col in qualitative_cols) {
+  conteo <- sum(grepl("Other", data[[col]], ignore.case = TRUE), na.rm = TRUE)
+  if (conteo > 0) {
+    others_count[[col]] <- conteo
+  }
+}
+
+print(others_count)
+```
+
+Vamos a comprobar si hay alguna relación en las personas que contestaron Others. Aquellas personas con respuesta Others en alguna variable, lo contestaron solo en esa?
+
+```{r}
+table(data$Sleep_Duration, data$Dietary_Habits)
+```
+
+```{r}
+table(data$Degree, data$Sleep_Duration)
+```
+
+```{r}
+table(data$Degree, data$Dietary_Habits)
+```
+
+No hay relación entre las personas que contestan Others en las distintas variables para esas respuestas. Por tanto, valoraremos en cada caso cómo actuar.
+
+Tenemos que trabajar con las variables Gender, City, Profession, Sleep_Duration, Dietary_Habits, Degree, Suicidal_Thoughts y Family_History.
+
+## CODIFICACIÓN
+
+Vamos a pasar a factor todas las variables categóricas para poder trabajar luego con los distintos modelos correctamente.
+
+-   Gender
+-   Suicidial_Thoughts
+-   Family_History
+
+```{r}
+data$Gender <- as.factor(data$Gender)
+data$Suicidal_Thoughts <- as.factor(data$Suicidal_Thoughts)
+data$Family_History <- as.factor(data$Family_History)
+```
+
+### City
+
+Veamos cuántos valores distintos toma la variable City.
+
+Primero, pasamos todo a minúsculas (siempre que hay texto). No hay tildes ni guiones.
+
+```{r}
+data$City <- tolower(data$City)
+```
+
+```{r}
+sort(unique(data$City))
+```
+
+Corregiremos Khaziabad, pues parece un error tipográfico de Ghaziabad, otra de las ciudades que aparece.
+
+```{r}
+data$City[data$City == "khaziabad"] <- "ghaziabad"
+```
+
+Dado que son muy pocas observaciones las que no son realmente ciudades, las eliminamos.
+
+```{r}
+datos_limpios <- data[!(data$City %in% c("3.0","bhavna", "city", "gaurav", "harsh",
+                                         "harsha", "nandini", "nalyan", "rashi", 
+                                         "reyansh", "saanvi", "vaanya", "kibara",
+                                         "less delhi", "less than 5 kalyan",
+                                         "m.com", "m.tech", "me", "mihir", "mira", "nalini", NA)), ]
+```
+
+Pasamos de 27901 observaciones a 27876.
+
+```{r}
+table(datos_limpios$City)
+```
+
+```{r}
+unique(datos_limpios$City)
+```
+
+Tenemos 30 ciudades distintas.
+
+Veamos ahora si la variable city tiene relación con depression o no. Para ello, pasaremos a factor ambas variables.
+
+```{r}
+datos_limpios$City <- as.factor(datos_limpios$City)
+datos_limpios$Depression <- as.factor(datos_limpios$Depression)
+tabla <- table(datos_limpios$City, datos_limpios$Depression)
+chisq.test(tabla)
+```
+
+Hay una asociación estadísticamente significativa entre la ciudad y la presencia de depresión. En otras palabras, las tasas de depresión difieren según la ciudad.
+
+### Profession
+
+Analizamos ahora la variable profession.
+
+```{r}
+sort(unique(datos_limpios$Profession))
+```
+
+La variable toma 14 valores diferentes.
+
+```{r}
+table(datos_limpios$Profession)
+```
+
+Dado que solo hay 31 personas que no tengan como profesion estudiante, no vamos a usala porque no aporta información, no tiene peso frente a las 27845 personas que solo estudian.
+
+```{r}
+datos_limpios$Profession <- as.factor(datos_limpios$Profession)
+```
+
+### Sleep_Duration
+
+Analizamos Sleep_Duration.
+
+```{r}
+sort(unique(datos_limpios$Sleep_Duration))
+```
+
+```{r}
+table(datos_limpios$Sleep_Duration)
+```
+
+Dado que los valores que tenemos son 5-6, 7-8, - de 5 y + de 8, interpretaremos other como 6-7, pues es aquella categoría que no está recogida y es muy extraño que no tengamos a nadie en ese intervalo. La recodificaremos de 1 a 5 siendo 1 menos de 5 horas y 5 más de 8.
+
+```{r}
+datos_limpios$Sleep_Duration[datos_limpios$Sleep_Duration == "Others"] <- "6-7 hours"
+```
+
+```{r}
+datos_limpios$Sleep_Duration <- factor(
+  datos_limpios$Sleep_Duration,
+  levels = c("Less than 5 hours",
+             "5-6 hours",
+             "6-7 hours",
+             "7-8 hours",
+             "More than 8 hours"),
+  labels = c("1", "2", "3", "4", "5")
+)
+
+```
+
+Comprobamos que se ha hecho correctamente.
+
+```{r}
+table(datos_limpios$Sleep_Duration)
+```
+
+### Dietary_Habits
+
+```{r}
+sort(unique(datos_limpios$Dietary_Habits))
+```
+
+```{r}
+table(datos_limpios$Dietary_Habits)
+```
+
+En este caso, dado que aparecen las categorías sano, medio e insano, eliminaremos others, pues los interpretamos como alguien que no quiso contestar y, al tratarse de muy pocos casos, no influirá mucho en el análisis.
+
+```{r}
+datos_limpios <- datos_limpios[!(datos_limpios$Dietary_Habits=="Others"), ]
+```
+
+Pasamos a factor y comprobamos.
+
+```{r}
+datos_limpios$Dietary_Habits <- as.factor(datos_limpios$Dietary_Habits)
+```
+
+```{r}
+table(datos_limpios$Dietary_Habits)
+```
+
+### Degree
+
+```{r}
+sort(unique(datos_limpios$Degree))
+```
+
+```{r}
+table(datos_limpios$Degree)
+```
+
+Agruparemos por nivel y área. Class 12 corresponde a bachillerato. En caso de grado y master, agruparemos en ciencias, sociales, humanidades y artes.
+
+```{r}
+datos_limpios$Degree[datos_limpios$Degree %in% c("BSc", "B.Tech", "BE", "BCA", "B.Pharm", "B.Arch", "MBBS")] <- "BScience"
+datos_limpios$Degree[datos_limpios$Degree %in% c("LLB", "B.Ed", "BHM", "BBA", "B.Com")] <- "BSocial"
+datos_limpios$Degree[datos_limpios$Degree %in% c("BA")] <- "BArts"
+
+datos_limpios$Degree[datos_limpios$Degree %in% c("MA")] <- "MArts"
+datos_limpios$Degree[datos_limpios$Degree %in% c("MSc", "M.Tech", "ME", "MCA", "M.Pharm", "MD")] <- "MScience"
+datos_limpios$Degree[datos_limpios$Degree %in% c("M.Com", "MBA", "M.Ed","MHM", "LLM")] <- "MSocial"
+
+```
+
+```{r}
+table(datos_limpios$Degree)
+```
+
+Como "Others" no proporciona información significativa sobre el nivel o el área de estudio del encuestado, la eliminaremos.
+
+```{r}
+datos_limpios <- datos_limpios[!(datos_limpios$Degree=="Others"), ]
+```
+
+Pasamos a factor y comprobamos.
+
+```{r}
+datos_limpios$Degree <- as.factor(datos_limpios$Degree)
+```
+
+```{r}
+table(datos_limpios$Degree)
+```
+
+Comprobamos que todas las variables son del tipo correcto para continuar con el análisis.
+
+```{r}
+str(datos_limpios)
+```
+
+La base de datos con la que trabajaremos a partir de ahora tiene 27829 observaciones. 
+
+Comprobamos que está bien depurada y ya no tiene valores missing.
+
+```{r}
+which(is.na(datos_limpios))
+```
+
+Exportamos la base de datos.
+
+```{r}
+write.csv(datos_limpios, "depresion_depurada.csv", row.names = FALSE)
+write_sav(datos_limpios, "depresion_depurada.sav")
+write.xlsx(datos_limpios, "depresion_depurada.xlsx", rowNames = FALSE)
+```
+
+Base de datos final (solo con las variables que van a entrar en el modelo):
+
+```{r}
+datos_limpios <- datos_limpios[, -c(1,5,7,10)]
+str(datos_limpios)
+```
+
+```{r}
+write.csv(datos_limpios, "bd_final.csv", row.names = FALSE)
+write_sav(datos_limpios, "bd_final.sav")
+write.xlsx(datos_limpios, "bd_final.xlsx", rowNames = FALSE)
+```

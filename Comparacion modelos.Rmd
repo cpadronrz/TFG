@@ -1,0 +1,231 @@
+---
+title: "Comparación Modelos"
+author: "Carla"
+date: "2026-02-01"
+output: html_document
+---
+```{r, include=FALSE}
+knitr::opts_chunk$set(out.width='70%', fig.align = "center") 
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(global.par = TRUE)
+```
+
+Cargamos las librerías de los 3 modelos
+
+```{r, include=FALSE}
+library(readr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(car)
+library(purrr)
+library(MLmetrics)
+library(rattle)
+library(vcd)
+library(partykit)
+library(randomForest)
+library(OOBCurve)
+library(furrr)
+library(doParallel)
+cluster <- makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+```
+
+Cargamos la base de datos
+
+```{r}
+datosClasif <- read_csv("bd_final.csv")
+str(datosClasif)
+```
+
+Pasamos a factor las variables de tipo char para poder realizar bien el análisis
+
+```{r}
+datosClasif$Gender <- as.factor(datosClasif$Gender)
+datosClasif$City <- as.factor(datosClasif$City)
+datosClasif$Dietary_Habits <- as.factor(datosClasif$Dietary_Habits)
+datosClasif$Degree <- as.factor(datosClasif$Degree)
+datosClasif$Suicidal_Thoughts <- as.factor(datosClasif$Suicidal_Thoughts)
+datosClasif$Family_History <- as.factor(datosClasif$Family_History)
+```
+
+Realizamos lo mismo con la variable Depression
+
+```{r}
+datosClasif$Depression<-as.factor(make.names(datosClasif$Depression))
+
+```
+
+Realizamos una partición del conjunto de datos en entrenamiento (80%) y prueba (20%) con la misma semilla para así usar los mismos datos para entrenar el modelo que se utilizaron anteriormente.
+
+```{r}
+set.seed(12345)
+trainIndex <- createDataPartition(datosClasif$Depression, p=0.8, list=FALSE)
+data_train <- datosClasif[trainIndex,]
+data_test <- datosClasif[-trainIndex,]
+```
+
+Vamos a comparar ahora el modelo ganador de cada uno de los 3 modelos, es decir, el modelo de regresión logística, el modelo de árbol de decisión y el modelo de random forest. Los modelos a comparar son:
+
+- Regresión logística binaria
+
+```{r}
+modelo_rlb<-glm(Depression~ Age + Academic_Pressure + Study_Satisfaction + Sleep_Duration + Dietary_Habits + Suicidal_Thoughts + Work_Study_Hours + Financial_Stress, data=data_train, family=binomial)
+summary(modelo_rlb)
+```
+
+- Árbol de decisión
+
+```{r}
+set.seed(12345)
+arbol <- rpart(
+  Depression ~ Age + Academic_Pressure + Study_Satisfaction +
+    Sleep_Duration + Dietary_Habits + Suicidal_Thoughts +
+    Work_Study_Hours + Financial_Stress,
+  data = data_train,
+  method = "class",
+  maxsurrogate = 2
+)
+```
+
+- Random forest
+
+```{r}
+set.seed(12345)
+RF <- randomForest(
+  Depression ~ ., 
+  data=data_train, 
+  keep.inbag = TRUE,
+  ntree = 200,
+  nodesize=ceiling(0.01*nrow(data_train)),
+  mtry = 2,
+  importance = TRUE)
+```
+
+
+Usaremos la función train() para entrenar los modelos, pues permite aplicar las mismas "reglas de examen" (validación cruzada) a cualquier tipo de modelo, de forma que se  evaluarán con el mismo rigor los modelos de regresión logística binaria, árboles y random forest. Hay que especificar que es la función train() de la librería caret para que no intente usar otra y de error. La acompañaremos de resamples(), que recoge los resultados obtenidos para poder compararlos.
+
+Definimos las reglas de la validación cruzada que se van a aplicar a los modelos.
+
+```{r}
+control_ejecucion <- trainControl(method = "cv", 
+                                  number = 10, 
+                                  classProbs = TRUE, 
+                                  summaryFunction = twoClassSummary)
+```
+
+Aplicaremos validación cruzada 10 veces a cada modelo, pidiéndole que nos saque probabilidades (para poder calcular luego el AUC) y las métricas ROC y Sensibilidad.
+
+A continuación, entrenamos los 3 modelos con los parámetros que determinamos anteriormente.
+
+
+- Regresión logística binaria
+
+```{r}
+
+set.seed(12345)
+modelo_rlb <- caret::train(Depression ~ Age + Academic_Pressure + Study_Satisfaction + 
+                          Sleep_Duration + Dietary_Habits + Suicidal_Thoughts + 
+                          Work_Study_Hours + Financial_Stress, 
+                          data = data_train, 
+                          method = "glm",
+                          family = "binomial", 
+                          trControl = control_ejecucion, 
+                          metric = "ROC")
+```
+
+- Árbol de decisión
+
+```{r}
+set.seed(12345)
+
+modelo_arbol <- caret::train(
+  Depression ~ Age + Academic_Pressure + Study_Satisfaction + 
+               Sleep_Duration + Dietary_Habits + Suicidal_Thoughts + 
+               Work_Study_Hours + Financial_Stress, 
+  data = data_train, 
+  method = "rpart", 
+  trControl = control_ejecucion, 
+  metric = "ROC"
+)
+```
+
+- Random forest
+
+```{r}
+set.seed(12345)
+modelo_rf <- caret::train(
+  Depression ~ ., 
+  data = data_train, 
+  method = "rf",
+  ntree = 200,
+  tuneGrid = expand.grid(.mtry = 2),
+  nodesize = ceiling(0.01 * nrow(data_train)),
+  trControl = control_ejecucion, 
+  metric = "ROC"
+)
+```
+
+Comparamos los modelos:
+
+```{r}
+resultados <- resamples(list(Log = modelo_rlb, Tree = modelo_arbol, RF = modelo_rf))
+summary(resultados)
+```
+
+```{r}
+bwplot(resultados, metric = "ROC", main = "Comparativa de Modelos (AUC/ROC)")
+```
+
+Observamos que el modelo de regresión logística binaria tiene mejores resultados en cuanto al valor del AUC y la sensibilidad. Además, observamos que tiene poca variabilidad.
+
+# Comprobación en test
+
+Realizamos la predicción final con el modelo de regresión logística
+
+## Que hacemos cn el pto de corte?
+
+```{r}
+#Test
+probs_test <- predict(modelo_rlb, data_test, type = "prob")
+
+pred_test <- ifelse(probs_test$X1 >= 0.5, "X1", "X0")
+
+cm_test <- confusionMatrix(
+  data = as.factor(pred_test),
+  reference = data_test$Depression,
+  positive = "X1"
+)
+```
+
+```{r}
+cm_test$overall[1:2]
+```
+
+```{r}
+cm_test$byClass[1:2]
+```
+
+# Faltaria interpretar ? 
+
+# Desde aqui conclusion
+Analizamos los ods ratio
+
+```{r}
+Anova(modelo_rlb$finalModel, type = "II")
+```
+
+Todas las variables son significativas
+
+```{r}
+summary(modelo_rlb)
+```
+
+```{r}
+exp(coef(modelo_rlb$finalModel))
+```
+
+
+
+

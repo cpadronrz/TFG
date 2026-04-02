@@ -1,0 +1,97 @@
+---
+title: "Relaciones"
+output: html_document
+date: "2025-11-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Cargamos las librerías necesarias.
+
+```{r, include=FALSE}
+library(corrplot)
+library(dplyr)
+library(readr)
+library(psych)
+```
+
+Cargamos la base de datos, comprobamos que esté bien cargada y quitamos la variable ID, que no vamos a usar, pues solo indica el paciente.
+
+```{r}
+datos <- read_csv("bd_final.csv")
+str(datos)
+```
+
+Pasamos a factor las variables de tipo char para poder realizar bien el análisis.
+
+```{r}
+datos$Gender <- as.factor(datos$Gender)
+datos$City <- as.factor(datos$City)
+datos$Dietary_Habits <- as.factor(datos$Dietary_Habits)
+datos$Degree <- as.factor(datos$Degree)
+datos$Suicidal_Thoughts <- as.factor(datos$Suicidal_Thoughts)
+datos$Family_History <- as.factor(datos$Family_History)
+```
+
+# Correlación de Spearman
+
+Variables ordinarias: Academic_Pressure, Study_Satisfaction, Sleep_Duration y Financial_Stress.
+Incluimos también la variable Age, aunque no es ordinal, para ver su relación con la depresión.
+
+```{r}
+vars_ordinales <- datos[, c("Academic_Pressure", "Study_Satisfaction", "Financial_Stress", "Sleep_Duration", "Age")]
+vars_ordinales$Dep_Num <- as.numeric(datos$Depression) - 1 
+```
+
+```{r}
+cor_matrix <- corr.test(vars_ordinales, method = "spearman")
+```
+
+Obtenemos los coeficientes de correlación.
+
+```{r}
+print(cor_matrix$r)
+```
+
+Obtenemos los p-valores.
+
+```{r}
+print(cor_matrix$p)
+```
+
+Todos los p-valores son menores que 0.05, por lo que todas las correlaciones son estadísticamente significativas.
+
+Graficamos la matriz de correlaciones con corrplot, mostrando solo la parte superior y los coeficientes de correlación.
+
+```{r}
+corrplot(cor_matrix$r, 
+         method = "circle", 
+         type = "upper", 
+         addCoef.col = "black",
+         tl.col = "black",
+         diag = FALSE,
+         tl.srt = 45,
+         col = COL2('RdBu'),
+         title = "\n Matriz de Correlación de Spearman",
+         mar = c(0,0,3,0))
+
+```
+
+# Variables categóricas
+
+Calculamos el valor de la chi-cuadrado para comprobar si hay asociación entre cada variable categórica y la variable de depresión y obtenemos los p-valores.
+
+```{r}
+vars_cat <- c("Gender", "City", "Dietary_Habits", "Suicidal_Thoughts", "Family_History")
+
+sapply(vars_cat, function(v) {
+  chisq.test(table(datos[[v]], datos$Depression))$p.value
+})
+```
+
+Todas las variables categóricas tienen un p-valor menor que 0.05, lo que indica que hay una asociación estadísticamente significativa entre cada una de estas variables y la depresión. La variable con la asociación más fuerte (menor p-valor) es Suicidal_Thoughts, lo que sugiere que los pensamientos suicidas están fuertemente relacionados con la depresión en esta muestra de estudiantes.
+
+
+

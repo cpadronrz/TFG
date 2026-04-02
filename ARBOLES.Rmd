@@ -1,0 +1,320 @@
+---
+title: "Arboles"
+author: "Carla Padrón"
+date: "03/12/2025"
+output: word_document
+execute:
+  warning: no
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(out.width='70%', fig.align = "center") 
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(global.par = TRUE)
+```
+
+```{r, include=FALSE}
+library(readr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(rattle)
+library(vcd)
+library(partykit)
+```
+
+Variable cualitativa --> Usaremos árboles de clasificación.
+
+Cargamos la base de datos, comprobamos que esté bien cargada y quitamos la variable ID, que no vamos a usar, pues solo indica el paciente.
+
+```{r}
+datosClasif <- read_csv("bd_final.csv")
+str(datosClasif)
+```
+
+Pasamos a factor las variables de tipo char para poder realizar bien el análisis.
+
+```{r}
+datosClasif$Gender <- as.factor(datosClasif$Gender)
+datosClasif$City <- as.factor(datosClasif$City)
+datosClasif$Dietary_Habits <- as.factor(datosClasif$Dietary_Habits)
+datosClasif$Degree <- as.factor(datosClasif$Degree)
+datosClasif$Suicidal_Thoughts <- as.factor(datosClasif$Suicidal_Thoughts)
+datosClasif$Family_History <- as.factor(datosClasif$Family_History)
+```
+
+Realizamos lo mismo con la variable Depression.
+
+```{r}
+datosClasif$Depression <- factor(datosClasif$Depression,
+                                        levels = c(0, 1),
+                                        labels = c("No", "Yes"))
+```
+
+Realizamos una partición del conjunto de datos en entrenamiento (80%) y prueba (20%) con la misma semilla que en regresión logística binaria para así usar los mismos datos para entrenar el modelo que se utilizaron anteriormente.
+
+```{r}
+set.seed(12345)
+trainIndex <- createDataPartition(datosClasif$Depression, p=0.8, list=FALSE)
+data_clasif_train <- datosClasif[trainIndex,]
+data_clasif_test <- datosClasif[-trainIndex,]
+```
+
+Vamos a generar árboles de clasificación para la variable Depression con un tamaño mínimo de hoja del 1%, 2% y 5%.
+
+1%
+
+```{r}
+set.seed(12345)
+modeloClasif1<-rpart(Depression~., data=data_clasif_train, method = "class",
+minbucket=ceiling(0.01*nrow(data_clasif_train)),cp=0,
+maxsurrogate = 2)
+sum(modeloClasif1$frame$var == "<leaf>")
+```
+
+Tiene 13 hojas.
+
+2%
+
+```{r}
+set.seed(12345)
+modeloClasif2<-rpart(Depression~., data=data_clasif_train, method = "class",
+minbucket=ceiling(0.02*nrow(data_clasif_train)),cp=0,
+maxsurrogate = 2)
+sum(modeloClasif2$frame$var == "<leaf>")
+```
+
+Tiene 6 hojas.
+
+5%
+
+```{r}
+set.seed(12345)
+modeloClasif5<-rpart(Depression~., data=data_clasif_train, method = "class",
+minbucket=ceiling(0.05*nrow(data_clasif_train)),cp=0,
+maxsurrogate = 2)
+sum(modeloClasif5$frame$var == "<leaf>")
+```
+
+Tiene 2 hojas.
+
+Vamos a comparar los 3 modelos obtenidos a partir del área bajo la curva ROC, tanto en entrenamiento como en prueba.
+
+Obtenemos el AUC y determinaremos si es necesario podar y cuál parece ser el mejor para ello teniendo en cuenta la capacidad predictiva, el sobreajuste y el tamaño.
+
+```{r}
+modelos<-list(modeloClasif1,modeloClasif2,modeloClasif5)
+sapply(modelos, function(x) multiclass.roc(data_clasif_train$Depression,
+predict(x,data_clasif_train,type="prob"))$auc)
+```
+
+```{r}
+sapply(modelos, function(x) multiclass.roc(data_clasif_test$Depression,
+predict(x,data_clasif_test,type="prob"))$auc)
+```
+
+```{r}
+sapply(modelos,function(x) sum(x$frame$var == "<leaf>"))
+```
+
+El número de hojas es 13 en el primer caso, 6 en el segundo y 2 en el tercero. Las diferencias en el AUC para cada modelo en entrenamiento y en prueba no llegan al 0.1%. Comparando los 3 modelos entre ellos vemos que hay una mejora de aproximadamente un 8% entre el de 6 y el de 2 hojas y poco más de un 1% entre el de 6 y el de 13. Por tanto, sabemos que, podando, obtendremos que el árbol óptimo tendrá unas 6 hojas (y sería el árbol a podar dada la diferencia). Aún así, dado el número tan reducido de hojas, podaremos el de 13 y así saldremos de dudas de si alguno un poco más amplio que el de 6 hubiera sido mejor.
+
+Analizamos los resultados de la poda del árbol en términos de reducción de la tasa de clasificación errónea.
+
+```{r}
+modeloClasif1$cptable
+```
+
+```{r}
+plotcp(modeloClasif1, las=2)
+lines(modeloClasif1$cptable[,3],col="red", type = "b")
+```
+
+Dado que los resultados de la función rpart solo permiten obtener para la poda la información sobre la reducción de la tasa de clasificación errónea, utilizaremos a continuación la función xpred.rpart para replicar los resultados de la validación cruzada y poder realizar la poda en base al AUC y el índice Kappa. Representaremos gráficamente los resultados y determinaremos a partir de ellos cuál debería ser el tamaño óptimo (considerando esta información y la obtenida con rpart).
+
+```{r}
+set.seed(12345)
+modeloClasif1<-rpart(Depression~., data=data_clasif_train, method = "class",
+minbucket=ceiling(0.01*nrow(data_clasif_train)), cp=0,
+maxsurrogate = 2)
+set.seed(12345)
+CVresults<-xpred.rpart(modeloClasif1, return.all =T)
+```
+
+```{r}
+aucCV<-c()
+kappaCV<-c()
+for (i in 2:dim(CVresults)[2]){
+aux<-CVresults[,i,2:(dim(CVresults)[3]-1)]/CVresults[,i,(dim(CVresults)[3])]
+colnames(aux)<-levels(data_clasif_train$Depression)
+aucCV<-c(aucCV, multiclass.roc(data_clasif_train$Depression, aux)$auc)
+kappaCV<-c(kappaCV,Kappa(table(factor(CVresults[,i,1],1:length(levels(data_clasif_train$Depression))), data_clasif_train$Depression))$Unweighted[1])
+}
+plot(modeloClasif1$cptable[-1,2]+1, aucCV, type="b", xlab = "Número de hojas")
+```
+
+```{r}
+plot(modeloClasif1$cptable[-1,2]+1, kappaCV, type="b", xlab = "Número de hojas")
+```
+
+Como se puede observar, tanto el AUC como el índice Kappa muestran un comportamiento similar. Podemos observar cómo ambas métricas mejoran significativamente con el número de hojas, hasta que se produce cierto estancamiento. Teniendo en cuenta estos gráficos, junto con el anterior, podemos concluir que un árbol de 8 hojas producirá buenos resultados sin ser excesivamente grande.
+
+```{r}
+modeloClasif1podado <- prune(modeloClasif1, cp = 0.0034)
+rpart.plot(modeloClasif1podado,extra=105,nn=TRUE,tweak=1.2)
+```
+
+Obtenemos la importancia de las varibles.
+
+```{r}
+par(mar = c(9, 4, 1, 2))
+barplot(modeloClasif1podado$variable.importance/sum(modeloClasif1podado$variable.importance), las=3, ylim = c(0, 0.7))
+```
+
+La variable más importante es Suicidal_thoughts (casi 70%), Academic_Pressure (24% aprox), Financial_Stress (7% aprox). Dietary_Habits apenas influye.
+
+Calculamos las métricas de evaluación y comprobamos si es necesario modificar el punto de corte.
+
+```{r}
+curvaROC <- roc(data_clasif_train$Depression,
+predict(modeloClasif1podado,data_clasif_train,type="prob")[, "Yes"])$auc
+curvaROC
+```
+
+```{r}
+probs <-predict(modeloClasif1podado, data_clasif_train, type="prob")
+cm<-confusionMatrix(data=as.factor(ifelse(probs[,2]>=0.5,"Yes","No")),
+reference=data_clasif_train$Depression, positive="Yes")
+cm$table
+```
+
+```{r}
+cm$overall[1:2]
+```
+
+```{r}
+cm$byClass[1:2]
+```
+
+Al igual que en el caso de regresión logística binaria, buscamos un equilibrio simétrico entre sensibilidad y especificidad, por lo que, de nuevo, ajustaremos el punto de corte priorizando la detección de verdaderos positivos. Dado que el coste de omitir un caso real es significativamente mayor que el de un falso positivo, analizaremos el punto de corte óptimo para maximizar la sensibilidad y la capacidad diagnóstica del modelo.
+
+Extraemos las probabilidades.
+
+```{r}
+probs_tree <- predict(modeloClasif1podado, newdata = data_clasif_train, type = "prob")[, "Yes"]
+```
+
+Generamos la curva Roc y extraemos las coordenadas.
+
+```{r}
+curvaROC <- roc(data_clasif_train$Depression, probs_tree, levels = c("No", "Yes"))
+coords_all <- coords(curvaROC, "all", ret = c("threshold", "sensitivity", "specificity"))
+```
+
+La sensibilidad es el doble de importante en este caso, como indicamos en el modelo anterior.
+
+```{r}
+peso_sens <- 2 
+coords_all$indice_prioritario <- (peso_sens * coords_all$sensitivity) + coords_all$specificity
+```
+
+Seleccionamos el umbral óptimo.
+
+```{r}
+umbral_optimo_val <- coords_all$threshold[which.max(coords_all$indice_prioritario)]
+umbral_optimo_val <- pmax(0, pmin(1, umbral_optimo_val))
+```
+
+```{r}
+umbrales_seq <- seq(0, 1, by = 0.01)
+
+df_metricas <- purrr::map_df(umbrales_seq, function(u) {
+  preds <- factor(ifelse(probs_tree >= u, "Yes", "No"), levels = c("No", "Yes"))
+
+  cm_u <- confusionMatrix(preds, data_clasif_train$Depression, positive = "Yes")
+
+  data.frame(
+    Threshold = u,
+    Sensitivity = cm_u$byClass["Sensitivity"],
+    Specificity = cm_u$byClass["Specificity"],
+    Accuracy = cm_u$overall["Accuracy"],
+    F1 = cm_u$byClass["F1"],
+    Precision = cm_u$byClass["Precision"]
+  )
+})
+```
+
+```{r}
+df_long <- pivot_longer(df_metricas, 
+                        cols = c("Accuracy", "Precision", "Sensitivity", "Specificity", "F1"), 
+                        names_to = "Metrica", 
+                        values_to = "Valor")
+
+ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = umbral_optimo_val, linetype = "dashed", color = "black") +
+  annotate("text", x = umbral_optimo_val + 0.02, y = 0.5, 
+           label = paste("Umbral Óptimo:", round(umbral_optimo_val, 3)), 
+           angle = 90, vjust = 1, size = 3.5, fontface = "bold") +
+  labs(title = "Optimización de Punto de Corte - Árbol de Decisión",
+       subtitle = paste("Criterio: Sensibilidad priorizada (w =", peso_sens, ")"),
+       x = "Umbral de Probabilidad", 
+       y = "Valor de la Métrica") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1")
+```
+
+El punto de corte óptimo es 0.364.
+
+Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
+
+```{r}
+umbral_optimo <- 0.364
+pred_train <- ifelse(probs[, "Yes"] >= umbral_optimo, "Yes", "No")
+
+cm_train <- confusionMatrix(
+  data = as.factor(pred_train),
+  reference = data_clasif_train$Depression,
+  positive = "Yes"
+)
+```
+
+```{r}
+cm_train$overall[1:2]
+```
+
+```{r}
+cm_train$byClass[1:2]
+```
+
+Comprobamos en el conjunto de prueba.
+
+```{r}
+probs <-predict(modeloClasif1podado, data_clasif_test, type="prob")
+cm<-confusionMatrix(data=as.factor(ifelse(probs[,2]>=umbral_optimo,"Yes","No")),
+reference=data_clasif_test$Depression, positive="Yes")
+cm$table
+```
+
+```{r}
+probs_test <- predict(modeloClasif1podado, data_clasif_test, type = "prob")
+
+pred_test <- ifelse(probs_test[, "Yes"] >= umbral_optimo, "Yes", "No")
+
+cm_test <- confusionMatrix(
+  data = as.factor(pred_test),
+  reference = data_clasif_test$Depression,
+  positive = "Yes"
+)
+
+```
+
+```{r}
+cm_test$overall[1:2]
+```
+
+```{r}
+cm_test$byClass[1:2]
+```
+

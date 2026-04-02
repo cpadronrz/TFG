@@ -1,0 +1,278 @@
+---
+title: "Random Forest"
+author: "Carla"
+date: "2025-12-13"
+output:
+  word_document: default
+  html_document: default
+execute:
+  warning: no
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(out.width='70%', fig.align = "center") 
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(global.par = TRUE)
+```
+
+Cargamos las librerías que vamos a utilizar.
+
+```{r, include=FALSE}
+library(readr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(pROC)
+library(randomForest)
+library(OOBCurve)
+library(furrr)
+library(doParallel)
+cluster <- makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+```
+
+Cargamos la base de datos con las mismas características que para árboles (eliminamos las mismas variables) y pasamos las variables necesarias a factor.
+
+```{r}
+datosClasif <- read_csv("bd_final.csv")
+```
+
+```{r}
+datosClasif$Gender <- as.factor(datosClasif$Gender)
+datosClasif$City <- as.factor(datosClasif$City)
+datosClasif$Dietary_Habits <- as.factor(datosClasif$Dietary_Habits)
+datosClasif$Degree <- as.factor(datosClasif$Degree)
+datosClasif$Suicidal_Thoughts <- as.factor(datosClasif$Suicidal_Thoughts)
+datosClasif$Family_History <- as.factor(datosClasif$Family_History)
+```
+
+```{r}
+datosClasif$Depression <- factor(datosClasif$Depression,
+                                        levels = c(0, 1),
+                                        labels = c("No", "Yes"))
+```
+
+Realizamos una partición del conjunto de datos en entrenamiento (80%) y prueba (20%) con la misma semilla para así usar los mismos datos para entrenar el modelo que se utilizaron anteriormente.
+
+```{r}
+set.seed(12345)
+trainIndex <- createDataPartition(datosClasif$Depression, p=0.8, list=FALSE)
+data_train <- datosClasif[trainIndex,]
+data_test <- datosClasif[-trainIndex,]
+```
+
+Comenzamos creando un Random Forest de 500 árboles con un tamaño de hoja equivalente al 5% de los datos y ntree y mtry por defecto (en este caso, por tratarse de un Random Forest para clasificación, este último será la raíz cuadrada del número de variables explicativas disponibles):
+
+```{r}
+auxtask <- makeClassifTask(data = data_train, target = "Depression")
+```
+
+```{r}
+set.seed(12345)
+RF5<-randomForest(Depression ~ ., data=data_train, keep.inbag = TRUE,
+nodesize=ceiling(0.05*nrow(data_train)))
+results5 <- OOBCurve(RF5, measures = list(auc,kappa), task = auxtask, data = data_train)
+```
+
+Como podemos observar, se ha creado un modelo Random Forest para clasificación, con 500 árboles y seleccionando únicamente 3 variables en cada división de nodos, lo que da lugar a un modelo con una tasa de error de 17.13%.
+
+Construímos modelos con tamaño de hoja del 1% y del 0.5%.
+
+```{r}
+set.seed(12345)
+RF_1<-randomForest(Depression~., data=data_train, keep.inbag = TRUE,
+nodesize=ceiling(0.01*nrow(data_train)))
+results1 <- OOBCurve(RF_1, measures = list(auc,kappa), task = auxtask, data = data_train)
+
+set.seed(12345)
+RF_05<-randomForest(Depression~., data=data_train, keep.inbag = TRUE,
+nodesize=ceiling(0.005*nrow(data_train)))
+results05 <- OOBCurve(RF_05, measures = list(auc,kappa), task = auxtask, data = data_train)
+```
+
+```{r}
+plot(RF_1$err.rate[,1], xlab = "ntrees", ylab = "Tasa de fallo", ylim=c(0.15,0.26))
+points(RF5$err.rate[,1], col="red")
+points(RF_05$err.rate[,1], col="green")
+```
+
+```{r}
+plot(results1$auc, ylab = "oob-auc", xlab = "ntrees")
+points(results5$auc, col="red")
+points(results05$auc, col="green")
+```
+
+```{r}
+plot(results1$kappa, ylab = "oob-kappa", xlab = "ntrees")
+points(results5$kappa, col="red")
+points(results05$kappa, col="green")
+```
+
+Vemos como disminuir el tamaño de hoja ha supuesto cierta mejora en las tres métricas pero que, a partir de un tamaño del 1%, no existen grandes diferencias. Así mismo, el mejor valor se alcanza cuando el número de árboles ronda los 100, pero hay una ligera mejora con 200 en el kappa. Se podría seleccionar cualquiera de los dos, pues no se producirá sobreajuste. Nos quedaremos con ntrees = 200 para garantizar usar toda su precisión.
+
+Recurrimos a un bucle que recorra los posibles valores de mtry (pero en este caso recurrimos posteriormente a la función OOBCurve para que nos proporcione los valores de AUC y kappa):
+
+```{r}
+future::plan(multisession, workers=detectCores() - 1)
+mtryValues<-floor(seq(2,ncol(data_train)-1, length.out=10))
+nt<-200
+tunningRF<- future_map(mtryValues,
+~ {set.seed(12345);
+randomForest(Depression~., data=data_train,
+keep.inbag = TRUE,
+nodesize=ceiling(0.01*nrow(data_train)),
+ntree=nt,
+mtry=.x)}
+)
+plan(sequential)
+error_rate<-sapply(tunningRF, function(x) x$err.rate[nt,1])
+plot(mtryValues,error_rate,type="b")
+```
+
+```{r}
+AUCs<-sapply(tunningRF, function(x) OOBCurve(x, measures = list(auc, kappa),
+task = auxtask, data = data_train)$auc[nt])
+plot(mtryValues, AUCs, type="b")
+```
+
+```{r}
+Kappas<-sapply(tunningRF, function(x) OOBCurve(x, measures = list(auc, kappa),
+task = auxtask, data = data_train)$kappa[nt])
+plot(mtryValues, Kappas, type="b")
+```
+
+En este contexto, no tiene sentido hablar del principio de parsimonia, pues el mtry no es un parámetro de complejidad, interesa el máximo siempre (los árboles en todos los casos son del mismo tamaño). Además, hay una consistencia total entre métricas, lo que da mucha seguridad en la decisión:
+- Tasa de Error (error_rate): El valor mínimo se encuentra exactamente en mtry = 2, con un error aproximado de 0.160. A medida que aumenta el número de variables candidatas, el error sube de forma casi constante hasta superar el 0.166.
+- AUC (AUCs): La capacidad de discriminación del modelo es máxima en mtry = 2 (superior a 0.910) y cae linealmente conforme el mtry crece.
+- Kappa (Kappas): El valor máximo se logra también en mtry = 2, alcanzando casi 0.668.
+Por tanto, el valor óptimo de mtry en este caso es 2. Tener el mtry tan bajo forzará a los árboles a ser muy diferentes entre sí, ya que tienen pocas variables de donde elegir en cada división.
+
+El extremo de la derecha es el bagging (SIEMPRE). Por tanto, no es igual de potente en este caso, pues el Random Forest mejora.
+
+```{r}
+RF_def<-tunningRF[[which(mtryValues==2)]]
+print(RF_def)
+```
+
+Sensibilidad = 1 - class.error("Yes") = 0.8850019
+Especificidad = 1 - class.error("No") = 0.7762488
+
+```{r}
+par(mar = c(9, 4, 1, 1))
+barplot(t(RF_def$importance)/sum(RF_def$importance), las=2, ylim = c(0, 0.4))
+```
+
+En cuanto al conjunto de entrenamiento (para poder comparar luego con el de prueba y ver la calidad del modelo):
+
+El modelo construido tiene una tasa de error del 10.58% y una sensibilidad y especificidad del 88,5% y 77,62% respectivamente, basados en los datos OOB.
+
+Extraemos las probabilidades.
+
+```{r}
+probs_rf <- predict(RF_def, newdata = data_train, type = "prob")[,2]
+```
+
+Generamos la curva ROC para el bosque y extraemos las coordenadas.
+
+```{r}
+curvaROC_rf <- roc(data_train$Depression, probs_rf, levels = c("No", "Yes"))
+coords_rf <- coords(curvaROC_rf, "all", ret = c("threshold", "sensitivity", "specificity"))
+```
+
+La sensibilidad es el doble de importante en este caso, como indicamos en los modelos anteriores.
+
+```{r}
+peso_sens <- 2 
+coords_rf$indice_prioritario <- (peso_sens * coords_rf$sensitivity) + coords_rf$specificity
+```
+
+Seleccionamos el umbral óptimo.
+
+```{r}
+umbral_rf_val <- coords_rf$threshold[which.max(coords_rf$indice_prioritario)]
+umbral_rf_val <- pmax(0, pmin(1, umbral_rf_val))
+```
+
+```{r}
+df_metricas_rf <- purrr::map_df(seq(0, 1, by = 0.01), function(u) {
+  preds <- factor(ifelse(probs_rf >= u, "Yes", "No"), levels = c("No", "Yes"))
+  cm_u <- confusionMatrix(preds, data_train$Depression, positive = "Yes")
+  
+  data.frame(
+    Threshold = u,
+    Sensitivity = cm_u$byClass["Sensitivity"],
+    Specificity = cm_u$byClass["Specificity"],
+    Accuracy = cm_u$overall["Accuracy"],
+    F1 = cm_u$byClass["F1"]
+  )
+})
+```
+
+```{r}
+df_long_rf <- pivot_longer(df_metricas_rf, cols = -Threshold, names_to = "Metrica", values_to = "Valor")
+
+ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = umbral_rf_val, linetype = "dashed", color = "black") +
+  annotate("text", x = umbral_rf_val + 0.02, y = 0.5, 
+           label = paste("Umbral RF:", round(umbral_rf_val, 3)), 
+           angle = 90, vjust = 1, size = 3.5, fontface = "bold") +
+  labs(title = "Optimización de Umbral - Random Forest",
+       subtitle = "Priorizando Sensibilidad (w=2)",
+       x = "Umbral de Probabilidad", y = "Valor") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1")
+```
+
+El punto de corte óptimo es 0.458.
+
+Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
+
+```{r}
+umbral_optimo <- 0.458
+pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
+
+cm_train <- confusionMatrix(
+  data = as.factor(pred_train),
+  reference = data_train$Depression,
+  positive = "Yes"
+)
+```
+
+
+```{r}
+cm_train$overall[1:2]
+```
+
+```{r}
+cm_train$byClass[1:2]
+```
+
+Comprobamos en el conjunto de prueba.
+
+```{r}
+curvaROC <- roc(data_test$Depression,
+predict(RF_def,data_test,type="prob")[, "Yes"])$auc
+curvaROC
+```
+
+```{r}
+probs_test <- predict(RF_def, data_test, type = "prob")
+
+pred_test <- ifelse(probs_test[, "Yes"] >= umbral_optimo, "Yes", "No")
+
+cm_test <- confusionMatrix(
+  data = as.factor(pred_test),
+  reference = data_test$Depression,
+  positive = "Yes"
+)
+
+```
+
+```{r}
+cm_test$overall[1:2]
+```
+
+```{r}
+cm_test$byClass[1:2]
+```

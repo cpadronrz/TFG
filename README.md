@@ -7,14 +7,22 @@
 </div>
 
 
-## 📝 Descripción
+## 📑 Table of Contents
+
+* [Descripción](#descripcion)
+* [Estructura del proyecto](#estructura)
+* [Metodología y Reproducibilidad](#metodologia)
+* [Conclusiones Clave](#conclusiones)
+
+
+## 📝 Descripción <a id="descripcion"></a>
 Este proyecto tiene como objetivo principal diseñar una herramienta capaz de identificar indicadores de riesgo de depresión de forma preventiva en entornos educativos, utilizando una muestra de **27.829 estudiantes**.
 
 A través de este repositorio, comparto todo mi flujo de trabajo, desde el preprocesamiento de datos crudos hasta la validación de modelos de alta precisión como **Random Forest** y **Árboles de Decisión**, concluyendo con un modelo de **Regresión Logística** optimizado para la detección clínica.
 
 ---
 
-## 📂 Estructura del Proyecto
+## 📂 Estructura del Proyecto <a id="estructura"></a>
 
 He dividido mi código en módulos específicos para que el análisis sea totalmente reproducible:
 
@@ -30,7 +38,7 @@ He dividido mi código en módulos específicos para que el análisis sea totalm
 
 ---
 
-## 🛠️ Metodología y Reproducibilidad
+## 🛠️ Metodología y Reproducibilidad <a id="metodologia"></a>
 
 Para asegurar reproducibilidad, he seguido estas pautas técnicas:
 
@@ -40,7 +48,7 @@ Para asegurar reproducibilidad, he seguido estas pautas técnicas:
 
 ---
 
-## 📈 Conclusiones Clave
+## 📈 Conclusiones Clave <a id="conclusiones"></a>
 
 Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (Modelo 1)** por su excelente equilibrio entre simplicidad y capacidad diagnóstica:
 

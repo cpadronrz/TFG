@@ -11,7 +11,6 @@ run;
 
 *Vamos a hacerlo para cada tipo de variable para poder adaptar los ejes en cada caso;
 ods graphics on;
-ods select histogram; *Para que solo se muestren los histogramas;
 
 PROC UNIVARIATE DATA=datos;
    VAR CGPA;
@@ -27,10 +26,10 @@ PROC UNIVARIATE DATA=datos;
                 MIDPOINTS=16 TO 42 BY 1;
 RUN;
 
-*Para las de intervalo (quitamos job_satisfaction y work_pressure);
+*Para las de intervalo;
 
 PROC UNIVARIATE DATA=datos;
-   VAR Academic_pressure study_satisfaction financial_stress;
+   VAR Academic_pressure study_satisfaction financial_stress job_satisfaction work_pressure;
    HISTOGRAM / NORMAL(MU=EST SIGMA=EST)
                 CFILL=GRAY
                 MIDPOINTS=0 TO 6 BY 1;
@@ -58,10 +57,9 @@ RUN;
     %end;
 %mend;
 
-/* Llamada */
+* Llamada;
 %boxplots(CGPA Age Academic_pressure Work_pressure study_satisfaction job_satisfaction work_study_hours financial_stress);
 
-    
 
 *Para las categóricas. Si ponemos varias, ya sale todo;
 

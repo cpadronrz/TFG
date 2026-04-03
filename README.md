@@ -54,7 +54,7 @@ Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (
 
 * **Sensibilidad:** 91,59% (priorizando minimizar falsos negativos en salud pública).
 * **AUC:** 0,9204.
-* **Factores Críticos:** He identificado que los **pensamientos suicidas** multiplican el riesgo por 12 y la **presión académica** y una dieta poco saludable son factores de riesgo determinantes.
+* **Factores Críticos:** He identificado que los **pensamientos suicidas** multiplican el riesgo por 12 y la **presión académica** y una **dieta poco saludable** son factores de riesgo determinantes.
 
 ---
 

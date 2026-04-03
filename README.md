@@ -1,10 +1,11 @@
 # Aplicación de técnicas de Machine Learning para la detección temprana de la depresión en población estudiantil
 
-| | | |
-| :---: | :---: | :---: |
-| ![Languages](https://img.shields.io/badge/Languages-R%20%7C%20SAS-276DC3?style=for-the-badge) | ![Model](https://img.shields.io/badge/Main%20Model-Logistic%20Regression-purple?style=for-the-badge) | ![Sensitivity](https://img.shields.io/badge/Sensitivity-91.59%25-brightgreen?style=for-the-badge) |
+<div align="center">
+  <img src="https://img.shields.io/badge/Languages-R%20%7C%20SAS-276DC3?style=for-the-badge" height="35">
+  <img src="https://img.shields.io/badge/Main%20Model-Logistic%20Regression-purple?style=for-the-badge" height="35">
+  <img src="https://img.shields.io/badge/Sensitivity-91.59%25-brightgreen?style=for-the-badge" height="35">
+</div>
 
----
 
 ## 📝 Descripción
 Este proyecto tiene como objetivo principal diseñar una herramienta capaz de identificar indicadores de riesgo de depresión de forma preventiva en entornos educativos, utilizando una muestra de **27.829 estudiantes**.

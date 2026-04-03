@@ -1,8 +1,7 @@
 # Aplicación de técnicas de Machine Learning para la detección temprana de la depresión en población estudiantil
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Language-R-276DC3?style=for-the-badge&logo=r&logoColor=white" />
-  <img src="https://img.shields.io/badge/Language-SAS-00487B?style=for-the-badge&logo=sas&logoColor=white" />
+  <img src="https://img.shields.io/badge/Languages-R%20%7C%20SAS-276DC3?style=for-the-badge&logo=r&logoColor=white" />
   <img src="https://img.shields.io/badge/Main%20Model-Logistic%20Regression-purple?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Score-AUC%200.9204-brightgreen?style=for-the-badge" />
 </p>

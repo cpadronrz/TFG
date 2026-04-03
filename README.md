@@ -1,9 +1,9 @@
 # Aplicación de técnicas de Machine Learning para la detección temprana de la depresión en población estudiantil
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Main_Model-Logistic_Regression-purple?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/R_Language-276DC3?style=for-the-badge&logo=r&logoColor=white" />
-  <img src="https://img.shields.io/badge/AUC-0.9204-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/TFG-Estad%C3%ADstica%20Aplicada-blue?style=flat-square" alt="TFG Badge">
+  <img src="https://img.shields.io/badge/Model-Logistic%20Regression-purple?style=flat-square" alt="Model Badge">
+  <img src="https://img.shields.io/badge/AUC-0.9204-green?style=flat-square" alt="AUC Badge">
 </p>
 
 ## 📝 Descripción
@@ -19,13 +19,13 @@ He dividido mi código en módulos específicos para que el análisis sea totalm
 
 | Archivo | Descripción |
 | :--- | :--- |
-| **`depuracion.Rmd`** | [cite_start]Mi proceso de limpieza: gestión de NAs, corrección tipográfica de ciudades e imputación por mediana[cite: 34, 35, 40]. |
-| **`relaciones.Rmd`** | Mi análisis exploratorio. [cite_start]Uso de Spearman para variables ordinales y $\chi^{2}$ de Pearson para categóricas[cite: 73, 78]. |
-| **`RLB.Rmd`** | Desarrollo del modelo de Regresión Logística. [cite_start]Comparativa de criterios AIC/BIC y optimización del umbral[cite: 91, 103, 111]. |
-| **`ARBOLES.Rmd`** | [cite_start]Ajuste y poda (*pruning*) de árboles de clasificación hasta alcanzar la estructura óptima de 8 hojas[cite: 123, 138, 140]. |
-| **`RF.Rmd`** | [cite_start]Entrenamiento del Random Forest optimizando hiperparámetros ($mtry=2$, $ntree=200$)[cite: 148, 155, 159]. |
-| **`Comparacion_modelos.Rmd`** | [cite_start]Evaluación final comparativa para seleccionar el modelo con mejor rendimiento y parsimonia[cite: 168, 178]. |
-| **`student_depresion.csv`** | [cite_start]El dataset utilizado en el proyecto[cite: 49]. |
+| **`depuracion.Rmd`** | Mi proceso de limpieza: gestión de NAs, corrección tipográfica de ciudades e imputación por mediana. |
+| **`relaciones.Rmd`** | Mi análisis exploratorio. Uso de Spearman para variables ordinales y $\chi^{2}$ de Pearson para categóricas. |
+| **`RLB.Rmd`** | Desarrollo del modelo de Regresión Logística. Comparativa de criterios AIC/BIC y optimización del umbral. |
+| **`ARBOLES.Rmd`** | Ajuste y poda (*pruning*) de árboles de clasificación hasta alcanzar la estructura óptima de 8 hojas. |
+| **`RF.Rmd`** | Entrenamiento del Random Forest optimizando hiperparámetros ($mtry=2$, $ntree=200$). |
+| **`Comparacion_modelos.Rmd`** | Evaluación final comparativa para seleccionar el modelo con mejor rendimiento y parsimonia. |
+| **`student_depresion.csv`** | El dataset utilizado en el proyecto. |
 
 ---
 
@@ -33,21 +33,21 @@ He dividido mi código en módulos específicos para que el análisis sea totalm
 
 Para asegurar reproducibilidad, he seguido estas pautas técnicas:
 
-* [cite_start]**Semilla fija:** Utilizo `set.seed(12345)` en todos los procesos que implican aleatoriedad (partición de datos y Random Forest)[cite: 89, 170].
-* **Partición de muestra:** He destinado un 80% de los datos para entrenamiento y un 20% para validación externa (test)[cite: 88, 170].
+* **Semilla fija:** Utilizo `set.seed(12345)` en todos los procesos que implican aleatoriedad (partición de datos y Random Forest).
+* **Partición de muestra:** He destinado un 80% de los datos para entrenamiento y un 20% para validación externa (test).
 * **Librerías clave:** `caret`, `rpart`, `randomForest`, `pROC`, `corrplot` y `tidyverse`.
 
 ---
 
 ## 📈 Conclusiones Clave
 
-[cite_start]Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (Modelo 1)** por su excelente equilibrio entre simplicidad y capacidad diagnóstica[cite: 178, 219]:
+Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (Modelo 1)** por su excelente equilibrio entre simplicidad y capacidad diagnóstica:
 
-* [cite_start]**Sensibilidad:** 91,59% (priorizando minimizar falsos negativos en salud pública)[cite: 181, 182].
-* **AUC:** 0,9204[cite: 120, 179].
-* [cite_start]**Factores Críticos:** He identificado que los **pensamientos suicidas** multiplican el riesgo por 12 y la **presión académica** y una dieta poco saludable son factores de riesgo determinantes[cite: 208, 210, 222].
+* **Sensibilidad:** 91,59% (priorizando minimizar falsos negativos en salud pública).
+* **AUC:** 0,9204.
+* **Factores Críticos:** He identificado que los **pensamientos suicidas** multiplican el riesgo por 12 y la **presión académica** y una dieta poco saludable son factores de riesgo determinantes.
 
 ---
 
 ## ✍️ Autora
-[cite_start]**Carla Padrón Rodríguez** *Grado en Estadística Aplicada* [cite: 3, 5]
+**Carla Padrón Rodríguez** *Grado en Estadística Aplicada*

@@ -94,7 +94,7 @@ arbol1 <- rpart(
 sum(arbol1$frame$var == "<leaf>")
 ```
 
-Obtenemos un árbol de 6 hojas.
+Obtenemos un árbol de 6 nodos terminales.
 
 Representamos el árbol.
 
@@ -124,7 +124,7 @@ arbolStepAIC <- rpart(
 sum(arbolStepAIC$frame$var == "<leaf>")
 ```
 
-Obtenemos un árbol de 6 hojas.
+Obtenemos un árbol de 6 nodos terminales.
 
 Representamos el árbol.
 
@@ -150,7 +150,7 @@ arbolStepBIC <- rpart(
 sum(arbolStepBIC$frame$var == "<leaf>")
 ```
 
-Obtenemos un árbol de 6 hojas.
+Obtenemos un árbol de 6 nodos terminales.
 
 Representamos el árbol.
 

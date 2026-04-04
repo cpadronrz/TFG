@@ -64,5 +64,5 @@ RUN;
 *Para las categóricas. Si ponemos varias, ya sale todo;
 
 PROC FREQ DATA=datos;
-   TABLES Depression gender Have_you_ever_had_Suicidal_thoug family_history_of_mental_illness City degree sleep_duration dietary_habits / PLOTS=FREQPLOT;
+   TABLES Depression gender Have_you_ever_had_Suicidal_thoug family_history_of_mental_illness City degree sleep_duration dietary_habits profession / PLOTS=FREQPLOT;
 RUN;

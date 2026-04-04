@@ -37,12 +37,12 @@ datos$Family_History <- as.factor(datos$Family_History)
 
 # Correlación de Spearman
 
-Variables ordinarias: Academic_Pressure, Study_Satisfaction, Sleep_Duration y Financial_Stress.
+Variables ordinales: Academic_Pressure, Study_Satisfaction, Sleep_Duration y Financial_Stress.
 Incluimos también la variable Age, aunque no es ordinal, para ver su relación con la depresión.
 
 ```{r}
-vars_ordinales <- datos[, c("Academic_Pressure", "Study_Satisfaction", "Financial_Stress", "Sleep_Duration", "Age")]
-vars_ordinales$Dep_Num <- as.numeric(datos$Depression) - 1 
+datos$Dep_Num <- as.numeric(datos$Depression) - 1 
+vars_ordinales <- datos[, c("Academic_Pressure", "Study_Satisfaction", "Financial_Stress", "Sleep_Duration", "Work_Study_Hours", "Dep_Num")]
 ```
 
 ```{r}
@@ -79,6 +79,24 @@ corrplot(cor_matrix$r,
 
 ```
 
+# Variables continuas
+
+Age
+
+```{r}
+cor.test(datos$Age, datos$Dep_Num)$estimate
+```
+
+La relación entre Age y Depression es débil e inversa.
+
+GPA
+
+```{r}
+cor.test(datos$GPA, datos$Dep_Num)$estimate
+```
+
+GPA y Depression son prácticamente independientes.
+
 # Variables categóricas
 
 Calculamos el valor de la chi-cuadrado para comprobar si hay asociación entre cada variable categórica y la variable de depresión y obtenemos los p-valores.
@@ -93,5 +111,8 @@ sapply(vars_cat, function(v) {
 
 Todas las variables categóricas tienen un p-valor menor que 0.05, lo que indica que hay una asociación estadísticamente significativa entre cada una de estas variables y la depresión. La variable con la asociación más fuerte (menor p-valor) es Suicidal_Thoughts, lo que sugiere que los pensamientos suicidas están fuertemente relacionados con la depresión en esta muestra de estudiantes.
 
+```{r}
+table(datos$Suicidal_Thoughts, datos$Depression)
+```
 
 

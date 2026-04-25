@@ -41,7 +41,7 @@ Variables ordinales: Academic_Pressure, Study_Satisfaction, Sleep_Duration y Fin
 Incluimos también la variable Age, aunque no es ordinal, para ver su relación con la depresión.
 
 ```{r}
-datos$Dep_Num <- as.numeric(datos$Depression) - 1 
+datos$Dep_Num <- as.numeric(datos$Depression)  
 vars_ordinales <- datos[, c("Academic_Pressure", "Study_Satisfaction", "Financial_Stress", "Sleep_Duration", "Work_Study_Hours", "Dep_Num")]
 ```
 
@@ -89,10 +89,36 @@ cor.test(datos$Age, datos$Dep_Num)$estimate
 
 La relación entre Age y Depression es débil e inversa.
 
+Quitaremos los valores atípicos de la variable Age, pues pueden estar afectando a esta correlación.
+
+```{r}
+table(datos$Age)
+```
+
+```{r}
+Q1 <- quantile(datos$Age, 0.25)
+Q3 <- quantile(datos$Age, 0.75)
+IQR_val <- Q3 - Q1
+
+limite_inferior <- Q1 - 1.5 * IQR_val
+limite_superior <- Q3 + 1.5 * IQR_val
+
+datos_limpios <- subset(datos, Age >= limite_inferior & Age <= limite_superior)
+```
+
+Como la diferencia de tamaño una vez filtrada la base de datos es muy pequeña, no volvemos a calcular las correlaciones anteriores
+
+```{r}
+cor.test(datos_limpios$Age, datos_limpios$Dep_Num)$estimate
+```
+
+Apenas varía la correlación. Aun siendo débil, incluímos la variable Age en el análisis posterior, pues es una variable que suele estar relacionada con la depresión.
+
+
 GPA
 
 ```{r}
-cor.test(datos$GPA, datos$Dep_Num)$estimate
+cor.test(datos_limpios$GPA, datos_limpios$Dep_Num)$estimate
 ```
 
 GPA y Depression son prácticamente independientes.
@@ -105,14 +131,31 @@ Calculamos el valor de la chi-cuadrado para comprobar si hay asociación entre c
 vars_cat <- c("Gender", "City", "Dietary_Habits", "Suicidal_Thoughts", "Family_History")
 
 sapply(vars_cat, function(v) {
-  chisq.test(table(datos[[v]], datos$Depression))$p.value
+  chisq.test(table(datos_limpios[[v]], datos_limpios$Depression))$p.value
 })
 ```
 
-Todas las variables categóricas tienen un p-valor menor que 0.05, lo que indica que hay una asociación estadísticamente significativa entre cada una de estas variables y la depresión. La variable con la asociación más fuerte (menor p-valor) es Suicidal_Thoughts, lo que sugiere que los pensamientos suicidas están fuertemente relacionados con la depresión en esta muestra de estudiantes.
+Todas las variables categóricas tienen un p-valor menor que 0.05, a excepción de Gender, lo que indica que hay una asociación estadísticamente significativa entre cada una de estas variables y la depresión. La variable con la asociación más fuerte (menor p-valor) es Suicidal_Thoughts, lo que sugiere que los pensamientos suicidas están fuertemente relacionados con la depresión en esta muestra de estudiantes.
+
+Comprobamos la distribución de la variable suicidal_thoughts en función de la variable depression.
 
 ```{r}
 table(datos$Suicidal_Thoughts, datos$Depression)
 ```
 
+```{r}
+str(datos_limpios)
+```
+
+```{r}
+datos_limpios <- datos_limpios %>%
+  select(-Dep_Num, -Gender, -GPA)
+
+str(datos_limpios)
+```
+
+
+```{r}
+write.csv(datos_limpios, "bd_final_2.csv", row.names = FALSE)
+```
 

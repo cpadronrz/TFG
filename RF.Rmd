@@ -34,11 +34,10 @@ registerDoParallel(cluster)
 Cargamos la base de datos con las mismas características que para árboles (eliminamos las mismas variables) y pasamos las variables necesarias a factor.
 
 ```{r}
-datosClasif <- read_csv("bd_final.csv")
+datosClasif <- read_csv("bd_final_2.csv")
 ```
 
 ```{r}
-datosClasif$Gender <- as.factor(datosClasif$Gender)
 datosClasif$City <- as.factor(datosClasif$City)
 datosClasif$Dietary_Habits <- as.factor(datosClasif$Dietary_Habits)
 datosClasif$Degree <- as.factor(datosClasif$Degree)
@@ -154,8 +153,8 @@ RF_def<-tunningRF[[which(mtryValues==2)]]
 print(RF_def)
 ```
 
-Sensibilidad = 1 - class.error("Yes") = 0.8850019
-Especificidad = 1 - class.error("No") = 0.7762488
+Sensibilidad = 1 - class.error("Yes") = 0.8787693
+Especificidad = 1 - class.error("No") = 0.7803926
 
 ```{r}
 par(mar = c(9, 4, 1, 1))
@@ -164,7 +163,7 @@ barplot(t(RF_def$importance)/sum(RF_def$importance), las=2, ylim = c(0, 0.4))
 
 En cuanto al conjunto de entrenamiento (para poder comparar luego con el de prueba y ver la calidad del modelo):
 
-El modelo construido tiene una tasa de error del 10.58% y una sensibilidad y especificidad del 88,5% y 77,62% respectivamente, basados en los datos OOB.
+El modelo construido tiene una tasa de error del 10.58% y una sensibilidad y especificidad del 87,88% y 78,04% respectivamente, basados en los datos OOB.
 
 Extraemos las probabilidades.
 
@@ -224,12 +223,12 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.458.
+El punto de corte óptimo es 0.408.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.458
+umbral_optimo <- 0.408
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(

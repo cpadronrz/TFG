@@ -32,7 +32,7 @@ library(ggplot2)
 Importamos la base de datos.
 
 ```{r}
-datos <- read_csv("bd_final.csv")
+datos <- read_csv("bd_final_2.csv")
 ```
 
 Verificamos que esté bien cargada.
@@ -44,7 +44,6 @@ str(datos)
 Pasamos a factor las variables de tipo char para poder realizar bien el análisis, pues no se cargaron como tal.
 
 ```{r}
-datos$Gender <- as.factor(datos$Gender)
 datos$City <- as.factor(datos$City)
 datos$Dietary_Habits <- as.factor(datos$Dietary_Habits)
 datos$Degree <- as.factor(datos$Degree)
@@ -76,11 +75,11 @@ data_test <- datos[-trainIndex,]
 Modelos manuales:
 
 ```{r}
-modeloInicial<-glm(Depression ~ Gender + Age + City + Academic_Pressure + GPA + Study_Satisfaction + Sleep_Duration + Dietary_Habits + Degree + Suicidal_Thoughts + Work_Study_Hours + Financial_Stress + Family_History, data=data_train, family=binomial)
+modeloInicial<-glm(Depression ~ Age + City + Academic_Pressure +  Study_Satisfaction + Sleep_Duration + Dietary_Habits + Degree + Suicidal_Thoughts + Work_Study_Hours + Financial_Stress + Family_History, data=data_train, family=binomial)
 modeloInicial$rank
 ```
 
-Tiene 49 parámetros.
+Tiene 47 parámetros.
 
 ```{r}
 summary(modeloInicial)
@@ -112,11 +111,11 @@ Anova(modelo1, type = "II")
 2.  Modelo con las más influyentes (p-valor < 0.001).
 
 ```{r}
-modelo2<-glm(Depression ~ Age + City + Academic_Pressure + GPA + Study_Satisfaction + Sleep_Duration + Dietary_Habits +  Suicidal_Thoughts + Work_Study_Hours + Financial_Stress + Family_History, data=data_train, family=binomial)
+modelo2<-glm(Depression ~ Age + City + Academic_Pressure + Study_Satisfaction + Sleep_Duration + Dietary_Habits +  Suicidal_Thoughts + Work_Study_Hours + Financial_Stress + Family_History, data=data_train, family=binomial)
 modelo2$rank
 ```
 
-El modelo tiene 41 parámetros.
+El modelo tiene 40 parámetros.
 
 ```{r}
 summary(modelo2)
@@ -149,14 +148,23 @@ map(modelos,function(x) formula(x))
 map_int(modelos,function(x) x$rank)
 ```
 
-Obtenemos dos modelos distintos, pues 1, 3 y 5 son iguales (los llevados a cabo usando BIC) y 2, 4 y 6 también (los llevados a cabo usando AIC). El primero cuenta con 12 parámetros y el segundo con 41.
+Obtenemos dos modelos distintos, pues 1, 3 y 5 son iguales (los llevados a cabo usando BIC) y 2, 4 y 6 también (los llevados a cabo usando AIC). El primero cuenta con 11 parámetros y el segundo con 47.
 
-El modelo de 41 parámetros es el mismo que hicimos antes manualmente (modelo 2). Por tanto, compararemos ahora el modelo 1, el modelo con AIC y el modelo con BIC. No nos interesa comparar el inicial porque ya hemos visto que hay variables que no son significativas.
+```{r}
+summary(modeloStepBIC)
+```
+
+```{r}
+summary(modeloStepAIC)
+```
+
+
+Compararemos ahora el modelo 1, el modelo 2, el modelo con AIC y el modelo con BIC. No nos interesa comparar el inicial porque ya hemos visto que hay variables que no son significativas.
 
 Llevaremos a cabo validación cruzada repetida para evaluar los distintos modelos obtenidos.
 
 ```{r}
-modelos<-list(modeloStepBIC, modeloStepAIC, modelo1)
+modelos<-list(modeloStepBIC, modeloStepAIC, modelo1, modelo2)
 vcrTodosModelos<-list()
 for (i in 1:length(modelos)){
 set.seed(12345)
@@ -177,7 +185,7 @@ scales = list(x = list(relation = "free")))
 summary(resamples(vcrTodosModelos), metric=c("AUC", "Kappa", "Accuracy"))
 ```
 
-Las diferencias en las 3 medidas entre los 3 modelos son mínimas (varía en el tercer decimal). El modelo con menor variabilidad es el de 12 parámetros (modeloStepBIC). De igual manera, empezaremos evaluando en los conjuntos de entrenamiento y prueba el modelo con menor número de parámetros y continuaremos con los otros para ver si mejoran en este segundo o nos aportan mayor estabilidad.
+Las diferencias en las 3 medidas entre los 4 modelos son mínimas (varía en el tercer decimal). Empezaremos evaluando en los conjuntos de entrenamiento y prueba el modelo con menor número de parámetros y continuaremos con los otros para ver si mejoran en este segundo o nos aportan mayor estabilidad.
 
 Evaluamos en el conjunto de entrenamiento para comparar con el de prueba y ver si hay sobreajuste.
 
@@ -189,7 +197,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9204.
+El AUC toma un valor de 0.9202.
 
 Evaluamos la matriz de confusión.
 
@@ -203,7 +211,7 @@ cm$table
 cm$overall[1:2]
 ```
 
-La tasa de acierto (Accuracy) es de 84.68%, lo cual implica que el modelo asignará correctamente el 84.67% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
+La tasa de acierto (Accuracy) es de 84.54%, lo cual implica que el modelo asignará correctamente el 84.54% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
 
 ```{r}
 cm$byClass[1:2]
@@ -273,12 +281,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.42.
+Por tanto, el punto de corte será 0.414.
 
 Evaluamos en entrenamiento para poder comprobar la estabilidad del modelo.
 
 ```{r}
-umbral_optimo <- 0.42
+umbral_optimo <- 0.414
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -320,7 +328,7 @@ Observamos que el modelo es estable, pues se comporta de la misma forma tanto en
 
 # Modelo StepBIC
 
-Veamos si con el modelo de 12 parámetros mejora mucho la predicción o no.
+Veamos si con el modelo de 11 parámetros mejora mucho la predicción o no.
 
 ```{r}
 probs <-predict(modeloStepBIC, data_train, type="response")
@@ -328,7 +336,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.921
+El AUC toma un valor de 0.9206
 
 Evaluamos la matriz de confusión.
 
@@ -342,7 +350,7 @@ cm$table
 cm$overall[1:2]
 ```
 
-La tasa de acierto (Accuracy) es de 84.76%, lo cual implica que el modelo asignará correctamente el 84.76% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
+La tasa de acierto (Accuracy) es de 84.66%, lo cual implica que el modelo asignará correctamente el 84.66% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
 
 ```{r}
 cm$byClass[1:2]
@@ -412,12 +420,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.41.
+Por tanto, el punto de corte será 0.445.
 
 Evaluamos en entrenamiento.
 
 ```{r}
-umbral_optimo <- 0.41
+umbral_optimo <- 0.445
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -457,17 +465,17 @@ cm_test$byClass[1:2]
 
 Observamos que el modelo es estable, pues se comporta de la misma forma tanto en entrenamiento como en prueba.
 
-# Modelo StepAIC 
+# Modelo 2 
 
 Merecería la pena el modelo con 40 parámetros?
 
 ```{r}
-probs <-predict(modeloStepAIC, data_train, type="response")
+probs <-predict(modelo2, data_train, type="response")
 curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9217.
+El AUC toma un valor de 0.9214.
 
 Evaluamos la matriz de confusión.
 
@@ -481,7 +489,7 @@ cm$table
 cm$overall[1:2]
 ```
 
-La tasa de acierto (Accuracy) es de 84.93%, lo cual implica que el modelo asignará correctamente el 84.93% de los casos. El índice de Kappa toma el valor 0.69, lo que implica calidad buena.
+La tasa de acierto (Accuracy) es de 84.78%, lo cual implica que el modelo asignará correctamente el 84.78% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
 
 ```{r}
 cm$byClass[1:2]
@@ -551,12 +559,156 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.426.
+Por tanto, el punto de corte será 0.386.
 
 Evaluamos en entrenamiento.
 
 ```{r}
-umbral_optimo <- 0.426
+umbral_optimo <- 0.386
+pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
+
+cm_opt <- confusionMatrix(
+  data = as.factor(pred),
+  reference = data_train$Depression,
+  positive = "X1"
+)
+```
+
+```{r}
+cm_opt$overall[1:2]
+```
+
+```{r}
+cm_opt$byClass[c("Sensitivity", "Specificity")]
+```
+
+
+Evaluamos en prueba.
+
+```{r}
+probs_test <- predict(modelo2, data_test, type = "response")
+
+pred_test <- ifelse(probs_test >= umbral_optimo, "X1", "X0")
+
+cm_test <- confusionMatrix(
+  data = as.factor(pred_test),
+  reference = data_test$Depression,
+  positive = "X1"
+)
+```
+
+```{r}
+cm_test$overall[1:2]
+```
+
+
+```{r}
+cm_test$byClass[1:2]
+```
+
+Observamos que el modelo es estable, pues se comporta de la misma forma tanto en entrenamiento como en prueba.
+
+
+# Modelo StepAIC 
+
+Merecería la pena el modelo con 47 parámetros?
+
+```{r}
+probs <-predict(modeloStepAIC, data_train, type="response")
+curvaROC<-roc(data_train$Depression, probs)
+curvaROC$auc
+```
+
+El AUC toma un valor de 0.9215.
+
+Evaluamos la matriz de confusión.
+
+```{r}
+cm<-confusionMatrix(data=as.factor(ifelse(probs>=0.5,"X1","X0")),
+reference=data_train$Depression, positive="X1")
+cm$table
+```
+
+```{r}
+cm$overall[1:2]
+```
+
+La tasa de acierto (Accuracy) es de 84.72%, lo cual implica que el modelo asignará correctamente el 84.72% de los casos. El índice de Kappa toma el valor 0.68, lo que implica calidad buena.
+
+```{r}
+cm$byClass[1:2]
+```
+
+## Modificación del punto de corte
+
+De nuevo, calculamos el punto de corte óptimo en cuanto a sensibilidad.
+
+Extraemos TODAS las coordenadas de la curva ROC para el análisis.
+
+```{r}
+coords_all <- coords(curvaROC, "all", ret = c("threshold", "sensitivity", "specificity"))
+```
+
+Definimos el umbral óptimo usando el criterio de priorización de sensibilidad. Usamos el índice de Youden ponderado, teniendo en cuenta para el cálculo que detectar a un enfermo es el doble de importante que clasificar correctamente a un sano.
+
+```{r}
+peso_sens <- 2 
+coords_all$indice_prioritario <- (peso_sens * coords_all$sensitivity) + coords_all$specificity
+```
+
+Seleccionamos el umbral que maximiza este índice ponderado y limpiamos los valores por seguridad, por si hubiera algún valor infinito.
+
+```{r}
+umbral_optimo_val <- coords_all$threshold[which.max(coords_all$indice_prioritario)]
+umbral_optimo_val <- pmax(0, pmin(1, umbral_optimo_val))
+```
+
+Generamos la tabla de métricas para el gráfico.
+
+```{r}
+umbrales_seq <- seq(0, 1, by = 0.01)
+
+df_metricas <- purrr::map_df(umbrales_seq, function(u) {
+  preds <- factor(ifelse(probs >= u, "X1", "X0"), levels = c("X0", "X1"))
+  cm_u <- confusionMatrix(preds, data_train$Depression, positive = "X1")
+  data.frame(
+    Threshold = u,
+    Sensitivity = cm_u$byClass["Sensitivity"],
+    Specificity = cm_u$byClass["Specificity"],
+    Accuracy = cm_u$overall["Accuracy"],
+    F1 = cm_u$byClass["F1"],
+    Precision = cm_u$byClass["Precision"]
+  )
+})
+```
+
+Graficamos y añadimos la línea en el umbral que prioriza sensibilidad.
+
+```{r}
+df_long <- pivot_longer(df_metricas, 
+                        cols = c("Accuracy", "Precision", "Sensitivity", "Specificity", "F1"), 
+                        names_to = "Metrica", 
+                        values_to = "Valor")
+
+ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = umbral_optimo_val, linetype = "dashed", color = "black") +
+  annotate("text", x = umbral_optimo_val + 0.02, y = 0.05, 
+           label = paste("Umbral Prioritario:", round(umbral_optimo_val, 3)), 
+           angle = 90, hjust = 0, size = 3.5) +
+  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad)",
+       subtitle = "Basado en Índice de Youden Ponderado (w=2)",
+       x = "Umbral de Probabilidad", y = "Valor de la Métrica") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1")
+```
+
+Por tanto, el punto de corte será 0.428.
+
+Evaluamos en entrenamiento.
+
+```{r}
+umbral_optimo <- 0.428
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -600,6 +752,6 @@ Observamos que el modelo es estable, pues se comporta de la misma forma tanto en
 
 # Conclusión
 
-Los 3 modelos predicen prácticamente igual, por lo que nos quedaríamos con el primero, pues es el más pequeño.
+Los 3 modelos predicen prácticamente igual, por lo que nos quedaríamos con el primero, pues es el más pequeño (principio de parsimonia).
 
 

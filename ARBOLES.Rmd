@@ -29,14 +29,13 @@ Variable cualitativa --> Usaremos árboles de clasificación.
 Cargamos la base de datos, comprobamos que esté bien cargada y quitamos la variable ID, que no vamos a usar, pues solo indica el paciente.
 
 ```{r}
-datosClasif <- read_csv("bd_final.csv")
+datosClasif <- read_csv("bd_final_2.csv")
 str(datosClasif)
 ```
 
 Pasamos a factor las variables de tipo char para poder realizar bien el análisis.
 
 ```{r}
-datosClasif$Gender <- as.factor(datosClasif$Gender)
 datosClasif$City <- as.factor(datosClasif$City)
 datosClasif$Dietary_Habits <- as.factor(datosClasif$Dietary_Habits)
 datosClasif$Degree <- as.factor(datosClasif$Degree)
@@ -73,7 +72,7 @@ maxsurrogate = 2)
 sum(modeloClasif1$frame$var == "<leaf>")
 ```
 
-Tiene 13 nodos terminales.
+Tiene 16 nodos terminales.
 
 2%
 
@@ -97,7 +96,7 @@ maxsurrogate = 2)
 sum(modeloClasif5$frame$var == "<leaf>")
 ```
 
-Tiene 2 nodos terminales.
+Tiene 3 nodos terminales.
 
 Vamos a comparar los 3 modelos obtenidos a partir del área bajo la curva ROC, tanto en entrenamiento como en prueba.
 
@@ -118,7 +117,7 @@ predict(x,data_clasif_test,type="prob"))$auc)
 sapply(modelos,function(x) sum(x$frame$var == "<leaf>"))
 ```
 
-El número de nodos terminales es 13 en el primer caso, 6 en el segundo y 2 en el tercero. Las diferencias en el AUC para cada modelo en entrenamiento y en prueba no llegan al 0.1%. Comparando los 3 modelos entre ellos vemos que hay una mejora de aproximadamente un 8% entre el de 6 y el de 2 nodos terminales y poco más de un 1% entre el de 6 y el de 13. Por tanto, sabemos que, podando, obtendremos que el árbol óptimo tendrá unos 6 nodos terminales (y sería el árbol a podar dada la diferencia). Aún así, dado el número tan reducido de nodos terminales, podaremos el de 13 y así saldremos de dudas de si alguno un poco más amplio que el de 6 hubiera sido mejor.
+El número de nodos terminales es 16 en el primer caso, 6 en el segundo y 3 en el tercero. Las diferencias en el AUC para cada modelo en entrenamiento y en prueba no llegan al 0.1%. Comparando los 3 modelos entre ellos vemos que hay una mejora de aproximadamente un 6% entre el de 6 y el de 3 nodos terminales y cerca de un 3% entre el de 6 y el de 16. Por tanto, podaremos el de 13 y así saldremos de dudas de si alguno un poco más amplio que el de 6 es mejor.
 
 Analizamos los resultados de la poda del árbol en términos de reducción de la tasa de clasificación errónea.
 
@@ -158,10 +157,10 @@ plot(modeloClasif1$cptable[-1,2]+1, aucCV, type="b", xlab = "Número de hojas")
 plot(modeloClasif1$cptable[-1,2]+1, kappaCV, type="b", xlab = "Número de hojas")
 ```
 
-Como se puede observar, tanto el AUC como el índice Kappa muestran un comportamiento similar. Podemos observar cómo ambas métricas mejoran significativamente con el número de nodos terminales, hasta que se produce cierto estancamiento. Teniendo en cuenta estos gráficos, junto con el anterior, podemos concluir que un árbol de 8 nodos terminales producirá buenos resultados sin ser excesivamente grande.
+Como se puede observar, tanto el AUC como el índice Kappa muestran un comportamiento similar. Podemos observar cómo ambas métricas mejoran significativamente con el número de nodos terminales, hasta que se produce cierto estancamiento. Teniendo en cuenta estos gráficos, junto con el anterior, podemos concluir que un árbol de 11 nodos terminales producirá buenos resultados sin ser excesivamente grande.
 
 ```{r}
-modeloClasif1podado <- prune(modeloClasif1, cp = 0.0034)
+modeloClasif1podado <- prune(modeloClasif1, cp = 0.0014)
 rpart.plot(modeloClasif1podado,extra=105,nn=TRUE,tweak=1.2)
 ```
 
@@ -265,12 +264,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.364.
+El punto de corte óptimo es 0.365.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.364
+umbral_optimo <- 0.365
 pred_train <- ifelse(probs[, "Yes"] >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(

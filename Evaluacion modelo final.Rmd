@@ -24,7 +24,7 @@ library(ggplot2)
 Importamos la base de datos.
 
 ```{r}
-datos <- read_csv("bd_final.csv")
+datos <- read_csv("bd_final_2.csv")
 ```
 
 Verificamos que esté bien cargada.
@@ -36,7 +36,6 @@ str(datos)
 Pasamos a factor las variables de tipo char para poder realizar bien el análisis, pues no se cargaron como tal.
 
 ```{r}
-datos$Gender <- as.factor(datos$Gender)
 datos$City <- as.factor(datos$City)
 datos$Dietary_Habits <- as.factor(datos$Dietary_Habits)
 datos$Degree <- as.factor(datos$Degree)

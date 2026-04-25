@@ -306,7 +306,6 @@ cm_test <- confusionMatrix(
   reference = data_clasif_test$Depression,
   positive = "Yes"
 )
-
 ```
 
 ```{r}

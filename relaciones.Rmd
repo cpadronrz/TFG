@@ -121,7 +121,31 @@ GPA
 cor.test(datos_limpios$GPA, datos_limpios$Dep_Num)$estimate
 ```
 
+```{r}
+table(datos_limpios$GPA)
+```
+
+```{r}
+Q1 <- quantile(datos_limpios$GPA, 0.25)
+Q3 <- quantile(datos_limpios$GPA, 0.75)
+IQR_val <- Q3 - Q1
+
+limite_inferior <- Q1 - 1.5 * IQR_val
+limite_superior <- Q3 + 1.5 * IQR_val
+
+datos_limpios <- subset(datos_limpios, GPA >= limite_inferior & GPA <= limite_superior)
+```
+
+```{r}
+table(datos_limpios$GPA)
+```
+
+```{r}
+cor.test(datos_limpios$GPA, datos_limpios$Dep_Num)$estimate
+```
+
 GPA y Depression son prácticamente independientes.
+
 
 # Variables categóricas
 

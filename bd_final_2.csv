@@ -4354,7 +4354,6 @@
 33,"kalyan",4,4,1,"Moderate","MScience","No",2,1,"No",0
 20,"jaipur",1,5,4,"Moderate","Class 12","No",1,2,"Yes",0
 34,"hyderabad",5,3,5,"Moderate","BScience","Yes",1,3,"No",0
-38,"chennai",0,0,2,"Healthy","Class 12","No",2,3,"No",0
 33,"chennai",4,3,2,"Unhealthy","MScience","No",6,2,"No",0
 30,"vasai-virar",3,3,5,"Moderate","BScience","No",7,1,"No",0
 25,"rajkot",3,4,1,"Moderate","MSocial","Yes",10,5,"No",1
@@ -10370,7 +10369,6 @@
 26,"chennai",5,4,4,"Healthy","BSocial","No",8,4,"No",1
 34,"rajkot",1,1,2,"Healthy","BSocial","Yes",10,1,"Yes",1
 25,"lucknow",3,1,2,"Moderate","BScience","Yes",10,3,"No",1
-28,"vadodara",3,4,1,"Healthy","BSocial","No",12,2,"No",0
 28,"thane",3,3,4,"Moderate","MSocial","Yes",5,1,"Yes",0
 24,"chennai",4,2,4,"Healthy","MSocial","No",10,3,"Yes",0
 22,"nagpur",2,5,2,"Healthy","MSocial","No",5,2,"Yes",0
@@ -11452,7 +11450,6 @@
 20,"ludhiana",2,3,2,"Unhealthy","Class 12","Yes",11,5,"Yes",1
 22,"jaipur",1,5,2,"Healthy","MScience","No",2,4,"No",0
 31,"patna",2,4,4,"Unhealthy","MSocial","Yes",10,5,"No",1
-32,"vadodara",5,0,1,"Unhealthy","Class 12","Yes",11,5,"No",1
 33,"faridabad",5,2,1,"Unhealthy","MSocial","Yes",4,5,"Yes",1
 20,"hyderabad",5,2,1,"Healthy","Class 12","Yes",10,3,"No",1
 24,"ludhiana",1,2,4,"Moderate","Class 12","No",11,4,"No",0
@@ -13858,7 +13855,6 @@
 34,"pune",1,4,4,"Unhealthy","MArts","No",10,2,"No",0
 27,"lucknow",5,3,2,"Unhealthy","MArts","Yes",12,1,"Yes",1
 33,"varanasi",1,4,4,"Moderate","MScience","Yes",10,3,"Yes",0
-20,"ahmedabad",0,0,1,"Moderate","Class 12","Yes",12,3,"Yes",1
 34,"agra",2,1,4,"Moderate","MScience","Yes",0,5,"Yes",0
 23,"kolkata",3,5,1,"Unhealthy","MScience","Yes",9,4,"Yes",1
 21,"rajkot",4,1,2,"Unhealthy","BScience","Yes",11,3,"Yes",1
@@ -14800,7 +14796,6 @@
 21,"visakhapatnam",4,2,5,"Unhealthy","MScience","Yes",12,5,"No",1
 24,"kalyan",2,4,5,"Moderate","BScience","Yes",4,4,"No",0
 18,"lucknow",3,4,1,"Moderate","Class 12","No",6,4,"No",0
-21,"lucknow",0,0,4,"Moderate","Class 12","Yes",3,3,"Yes",0
 29,"vasai-virar",3,4,4,"Unhealthy","MScience","Yes",4,4,"Yes",1
 28,"patna",4,3,1,"Moderate","BSocial","Yes",10,4,"No",0
 32,"varanasi",5,1,1,"Unhealthy","BSocial","Yes",8,4,"No",1
@@ -20848,7 +20843,6 @@
 30,"thane",3,1,5,"Unhealthy","MScience","Yes",3,5,"Yes",0
 34,"srinagar",2,4,1,"Healthy","MScience","Yes",8,2,"No",0
 34,"surat",1,5,2,"Healthy","BScience","No",8,4,"No",0
-18,"ahmedabad",0,0,1,"Moderate","Class 12","Yes",9,5,"No",1
 20,"chennai",4,4,4,"Moderate","Class 12","Yes",10,5,"No",1
 19,"kolkata",3,3,1,"Unhealthy","Class 12","Yes",11,5,"No",1
 23,"vasai-virar",5,5,2,"Moderate","BArts","No",10,2,"Yes",1
@@ -21738,7 +21732,6 @@
 21,"bhopal",5,4,1,"Unhealthy","BScience","Yes",11,5,"Yes",1
 20,"kalyan",5,1,1,"Healthy","Class 12","No",12,1,"No",1
 22,"kanpur",3,2,1,"Moderate","MSocial","Yes",8,5,"No",1
-34,"pune",1,5,1,"Unhealthy","MSocial","Yes",10,3,"Yes",0
 22,"mumbai",2,1,4,"Unhealthy","BSocial","No",1,5,"Yes",0
 28,"ghaziabad",2,4,1,"Moderate","Class 12","Yes",10,5,"Yes",1
 21,"bangalore",5,3,2,"Healthy","BScience","Yes",9,1,"Yes",1
@@ -25666,7 +25659,6 @@
 27,"delhi",4,4,1,"Unhealthy","BScience","No",0,5,"Yes",0
 26,"srinagar",5,2,1,"Moderate","BScience","Yes",1,4,"Yes",1
 31,"kanpur",4,3,2,"Unhealthy","MSocial","No",11,2,"Yes",0
-18,"rajkot",0,0,4,"Moderate","Class 12","Yes",9,4,"No",1
 31,"lucknow",2,3,1,"Moderate","BSocial","No",4,3,"Yes",0
 30,"thane",3,5,4,"Moderate","BScience","Yes",10,2,"No",0
 24,"kalyan",3,1,2,"Unhealthy","BSocial","Yes",10,4,"No",1
@@ -26636,7 +26628,6 @@
 28,"jaipur",1,4,4,"Moderate","MArts","No",4,2,"Yes",0
 24,"ghaziabad",1,4,5,"Moderate","BScience","No",7,1,"Yes",0
 30,"mumbai",3,2,1,"Moderate","BSocial","Yes",2,2,"No",0
-24,"meerut",0,0,5,"Unhealthy","Class 12","No",0,5,"No",0
 27,"rajkot",3,4,1,"Moderate","MScience","No",12,2,"Yes",0
 32,"srinagar",1,4,2,"Healthy","MSocial","No",12,1,"No",0
 23,"kolkata",4,5,4,"Healthy","MScience","Yes",8,5,"Yes",1

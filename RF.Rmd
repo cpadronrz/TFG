@@ -107,14 +107,14 @@ points(results5$kappa, col="red")
 points(results05$kappa, col="green")
 ```
 
-Vemos como disminuir el tamaño de hoja ha supuesto cierta mejora en las tres métricas pero que, a partir de un tamaño del 1%, no existen grandes diferencias. Así mismo, el mejor valor se alcanza cuando el número de árboles ronda los 100, pero hay una ligera mejora con 200 en el kappa. Se podría seleccionar cualquiera de los dos, pues no se producirá sobreajuste. Nos quedaremos con ntrees = 200 para garantizar usar toda su precisión.
+Vemos como disminuir el tamaño de hoja ha supuesto cierta mejora en las tres métricas pero que, a partir de un tamaño del 1%, no existen grandes diferencias. Así mismo, el mejor valor se alcanza cuando el número de árboles ronda los 100. por lo que seleccionaremos ntrees = 100 para garantizar usar toda su precisión.
 
 Recurrimos a un bucle que recorra los posibles valores de mtry (pero en este caso recurrimos posteriormente a la función OOBCurve para que nos proporcione los valores de AUC y kappa):
 
 ```{r}
 future::plan(multisession, workers=detectCores() - 1)
 mtryValues<-floor(seq(2,ncol(data_train)-1, length.out=10))
-nt<-200
+nt<-100
 tunningRF<- future_map(mtryValues,
 ~ {set.seed(12345);
 randomForest(Depression~., data=data_train,
@@ -141,9 +141,9 @@ plot(mtryValues, Kappas, type="b")
 ```
 
 En este contexto, no tiene sentido hablar del principio de parsimonia, pues el mtry no es un parámetro de complejidad, interesa el máximo siempre (los árboles en todos los casos son del mismo tamaño). Además, hay una consistencia total entre métricas, lo que da mucha seguridad en la decisión:
-- Tasa de Error (error_rate): El valor mínimo se encuentra exactamente en mtry = 2, con un error aproximado de 0.162. A medida que aumenta el número de variables candidatas, el error sube de forma casi constante hasta superar el 0.166.
-- AUC (AUCs): La capacidad de discriminación del modelo es máxima en mtry = 2 (superior a 0.910) y cae linealmente conforme el mtry crece.
-- Kappa (Kappas): El valor máximo se logra también en mtry = 2, alcanzando casi 0.664.
+- Tasa de Error (error_rate): El valor mínimo se encuentra exactamente en mtry = 2, con un error aproximado de 0.162. A medida que aumenta el número de variables candidatas, el error sube de forma casi constante hasta superar el 0.168.
+- AUC (AUCs): La capacidad de discriminación del modelo es máxima en mtry = 2 (cercano a 0.910) y cae linealmente conforme el mtry crece.
+- Kappa (Kappas): El valor máximo se logra también en mtry = 2, alcanzando 0.664.
 Por tanto, el valor óptimo de mtry en este caso es 2. Tener el mtry tan bajo forzará a los árboles a ser muy diferentes entre sí, ya que tienen pocas variables de donde elegir en cada división.
 
 El extremo de la derecha es el bagging (SIEMPRE). Por tanto, no es igual de potente en este caso, pues el Random Forest mejora.
@@ -153,8 +153,8 @@ RF_def<-tunningRF[[which(mtryValues==2)]]
 print(RF_def)
 ```
 
-Sensibilidad = 1 - class.error("Yes") = 0.8787693
-Especificidad = 1 - class.error("No") = 0.7803926
+Sensibilidad = 1 - class.error("Yes") = 0.8805833
+Especificidad = 1 - class.error("No") = 0.7771509
 
 ```{r}
 par(mar = c(9, 4, 1, 1))
@@ -163,7 +163,7 @@ barplot(t(RF_def$importance)/sum(RF_def$importance), las=2, ylim = c(0, 0.4))
 
 En cuanto al conjunto de entrenamiento (para poder comparar luego con el de prueba y ver la calidad del modelo):
 
-El modelo construido tiene una tasa de error del 16.2% y una sensibilidad y especificidad del 87,88% y 78,04% respectivamente, basados en los datos OOB.
+El modelo construido tiene una tasa de error del 16.23% y una sensibilidad y especificidad del 88,06% y 77,72% respectivamente, basados en los datos OOB.
 
 Extraemos las probabilidades.
 
@@ -223,12 +223,12 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.408.
+El punto de corte óptimo es 0.405.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.408
+umbral_optimo <- 0.405
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(

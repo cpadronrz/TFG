@@ -72,7 +72,7 @@ maxsurrogate = 2)
 sum(modeloClasif1$frame$var == "<leaf>")
 ```
 
-Tiene 16 nodos terminales.
+Tiene 11 nodos terminales.
 
 2%
 
@@ -117,7 +117,7 @@ predict(x,data_clasif_test,type="prob"))$auc)
 sapply(modelos,function(x) sum(x$frame$var == "<leaf>"))
 ```
 
-El número de nodos terminales es 16 en el primer caso, 6 en el segundo y 3 en el tercero. Las diferencias en el AUC para cada modelo en entrenamiento y en prueba no llegan al 0.1%. Comparando los 3 modelos entre ellos vemos que hay una mejora de aproximadamente un 6% entre el de 6 y el de 3 nodos terminales y cerca de un 3% entre el de 6 y el de 16. Por tanto, podaremos el de 13 y así saldremos de dudas de si alguno un poco más amplio que el de 6 es mejor.
+El número de nodos terminales es 11 en el primer caso, 6 en el segundo y 2 en el tercero. Las diferencias en el AUC para cada modelo en entrenamiento y en prueba no llegan al 0.5%. Comparando los 3 modelos entre ellos vemos que hay una mejora de aproximadamente un 9% entre el de 6 y el de 2 nodos terminales y cerca de un 0.5% entre el de 6 y el de 11. Por tanto, podaremos el de 11 y así saldremos de dudas de si alguno un poco más amplio que el de 6 es mejor.
 
 Analizamos los resultados de la poda del árbol en términos de reducción de la tasa de clasificación errónea.
 
@@ -157,10 +157,10 @@ plot(modeloClasif1$cptable[-1,2]+1, aucCV, type="b", xlab = "Número de hojas")
 plot(modeloClasif1$cptable[-1,2]+1, kappaCV, type="b", xlab = "Número de hojas")
 ```
 
-Como se puede observar, tanto el AUC como el índice Kappa muestran un comportamiento similar. Podemos observar cómo ambas métricas mejoran significativamente con el número de nodos terminales, hasta que se produce cierto estancamiento. Teniendo en cuenta estos gráficos, junto con el anterior, podemos concluir que un árbol de 11 nodos terminales producirá buenos resultados sin ser excesivamente grande.
+Como se puede observar, tanto el AUC como el índice Kappa muestran un comportamiento similar. Podemos observar cómo ambas métricas mejoran significativamente con el número de nodos terminales, hasta que se produce cierto estancamiento. Teniendo en cuenta estos gráficos, junto con el anterior, podemos concluir que un árbol de 9 nodos terminales producirá buenos resultados sin ser excesivamente grande.
 
 ```{r}
-modeloClasif1podado <- prune(modeloClasif1, cp = 0.0014)
+modeloClasif1podado <- prune(modeloClasif1, cp = 0.002)
 rpart.plot(modeloClasif1podado,extra=105,nn=TRUE,tweak=1.2)
 ```
 
@@ -264,12 +264,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.365.
+El punto de corte óptimo es 0.462.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.365
+umbral_optimo <- 0.462
 pred_train <- ifelse(probs[, "Yes"] >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(
@@ -315,4 +315,3 @@ cm_test$overall[1:2]
 ```{r}
 cm_test$byClass[1:2]
 ```
-

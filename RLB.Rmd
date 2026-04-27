@@ -197,7 +197,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9202.
+El AUC toma un valor de 0.921.
 
 Evaluamos la matriz de confusión.
 
@@ -281,12 +281,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.414.
+Por tanto, el punto de corte será 0.42.
 
 Evaluamos en entrenamiento para poder comprobar la estabilidad del modelo.
 
 ```{r}
-umbral_optimo <- 0.414
+umbral_optimo <- 0.42
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -336,7 +336,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9206
+El AUC toma un valor de 0.9214
 
 Evaluamos la matriz de confusión.
 
@@ -420,12 +420,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.445.
+Por tanto, el punto de corte será 0.444.
 
 Evaluamos en entrenamiento.
 
 ```{r}
-umbral_optimo <- 0.445
+umbral_optimo <- 0.444
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -475,7 +475,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9214.
+El AUC toma un valor de 0.9222.
 
 Evaluamos la matriz de confusión.
 
@@ -559,12 +559,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.386.
+Por tanto, el punto de corte será 0.422.
 
 Evaluamos en entrenamiento.
 
 ```{r}
-umbral_optimo <- 0.386
+umbral_optimo <- 0.422
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(
@@ -619,7 +619,7 @@ curvaROC<-roc(data_train$Depression, probs)
 curvaROC$auc
 ```
 
-El AUC toma un valor de 0.9215.
+El AUC toma un valor de 0.9224.
 
 Evaluamos la matriz de confusión.
 
@@ -703,12 +703,12 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-Por tanto, el punto de corte será 0.428.
+Por tanto, el punto de corte será 0.42.
 
 Evaluamos en entrenamiento.
 
 ```{r}
-umbral_optimo <- 0.428
+umbral_optimo <- 0.42
 pred <- ifelse(probs >= umbral_optimo, "X1", "X0")
 
 cm_opt <- confusionMatrix(

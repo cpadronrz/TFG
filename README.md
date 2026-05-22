@@ -16,7 +16,7 @@
 
 
 ## 📝 Descripción <a id="descripcion"></a>
-Este proyecto tiene como objetivo principal diseñar una herramienta capaz de identificar indicadores de riesgo de depresión de forma preventiva en entornos educativos, utilizando una muestra de **27.829 estudiantes**.
+Este proyecto tiene como objetivo principal diseñar una herramienta capaz de identificar indicadores de riesgo de depresión de forma preventiva en entornos educativos, utilizando una muestra de **27.808 estudiantes**.
 
 A través de este repositorio, comparto todo mi flujo de trabajo, desde el preprocesamiento de datos crudos hasta la validación de modelos de alta precisión como **Random Forest** y **Árboles de Decisión**, concluyendo con un modelo de **Regresión Logística** optimizado para la detección clínica.
 
@@ -28,13 +28,16 @@ He dividido mi código en módulos específicos para que el análisis sea totalm
 
 | Archivo | Descripción |
 | :--- | :--- |
-| **`depuracion.Rmd`** | Mi proceso de limpieza: gestión de NAs, corrección tipográfica de ciudades e imputación por mediana. |
-| **`relaciones.Rmd`** | Mi análisis exploratorio. Uso de Spearman para variables ordinales y $\chi^{2}$ de Pearson para categóricas. |
-| **`RLB.Rmd`** | Desarrollo del modelo de Regresión Logística. Comparativa de criterios AIC/BIC y optimización del umbral. |
-| **`ARBOLES.Rmd`** | Ajuste y poda (*pruning*) de árboles de clasificación hasta alcanzar la estructura óptima de 8 hojas. |
-| **`RF.Rmd`** | Entrenamiento del Random Forest optimizando hiperparámetros ($mtry=2$, $ntree=200$). |
-| **`Comparacion_modelos.Rmd`** | Evaluación final comparativa para seleccionar el modelo con mejor rendimiento y parsimonia. |
 | **`student_depresion.csv`** | El dataset utilizado en el proyecto. |
+| **`depuracion.Rmd`** | Mi proceso de limpieza: gestión de NAs, corrección tipográfica de ciudades e imputación por mediana. |
+| **`estadisticos_antes_de_depurar.sas`** | Estadísticos descriptivos iniciales (histogramas, boxplots y tablas de frecuencia) sobre el dataset original. |
+| **`estadisticos_tras_depurar.sas`** | Análisis descriptivo final tras la depuración, incluyendo frecuencias y gráficos de control. |
+| **`relaciones.Rmd`** | Mi análisis exploratorio. Uso de Spearman para variables ordinales y $\chi^{2}$ de Pearson para categóricas. |
+| **`regresion_logistica_binaria.Rmd`** | Desarrollo del modelo de Regresión Logística. Comparativa de criterios AIC/BIC y optimización del umbral. |
+| **`arboles.Rmd`** | Ajuste y poda (*pruning*) de árboles de clasificación hasta alcanzar la estructura óptima de 8 hojas. |
+| **`arboles_con_modelos_rlb.Rmd`** | Implementación de árboles de decisión (rpart) usando las fórmulas de los modelos de regresión logística para comparar estructuras y estabilidad. |
+| **`random_forest.Rmd`** | Entrenamiento del Random Forest optimizando hiperparámetros ($mtry=2$, $ntree=200$). |
+| **`evaluacion_modelo_final.Rmd`** | Análisis detallado del "modelo ganador" (Modelo 1): significatividad (Anova Tipo II) y cálculo de Odds Ratios. |
 
 ---
 
@@ -52,8 +55,8 @@ Para asegurar reproducibilidad, he seguido estas pautas técnicas:
 
 Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (Modelo 1)** por su excelente equilibrio entre simplicidad y capacidad diagnóstica:
 
-* **Sensibilidad:** 91,59% (priorizando minimizar falsos negativos en salud pública).
-* **AUC:** 0,9204.
+* **Sensibilidad:** 92,08% (priorizando minimizar falsos negativos en salud pública).
+* **AUC:** 0,921.
 * **Factores Críticos:** He identificado que los **pensamientos suicidas** multiplican el riesgo por 12 y la **presión académica** y una **dieta poco saludable** son factores de riesgo determinantes.
 
 ---

@@ -55,6 +55,19 @@ summary(data)
 
 # Depuración de la base de datos
 
+Miramos si hay duplicados
+
+```{r}
+datos_sin_id <- data[, -1]
+```
+
+
+```{r}
+any(duplicated(datos_sin_id))
+```
+
+No hay valores duplicados.
+
 Miramos si hay datos faltantes.
 
 ```{r}

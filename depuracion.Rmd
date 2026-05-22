@@ -147,7 +147,7 @@ Tenemos que trabajar con las variables Gender, City, Profession, Sleep_Duration,
 
 ## CODIFICACIÓN
 
-Vamos a pasar a factor todas las variables categóricas para poder trabajar luego con los distintos modelos correctamente.
+Vamos a definir como factor todas las variables categóricas para poder trabajar luego con los distintos modelos correctamente.
 
 -   Gender
 -   Suicidial_Thoughts
@@ -166,8 +166,18 @@ Veamos cuántos valores distintos toma la variable City.
 Primero, pasamos todo a minúsculas (siempre que hay texto). No hay tildes ni guiones.
 
 ```{r}
+length(unique(data$City))
+```
+
+```{r}
 data$City <- tolower(data$City)
 ```
+
+```{r}
+length(unique(data$City))
+```
+
+Partimos de 52 valores distintos, pero algunos no son realmente ciudades, sino que son nombres de personas o palabras sin sentido. Vamos a corregirlo.
 
 ```{r}
 sort(unique(data$City))
@@ -197,6 +207,10 @@ table(datos_limpios$City)
 
 ```{r}
 unique(datos_limpios$City)
+```
+
+```{r}
+length(unique(datos_limpios$City))
 ```
 
 Tenemos 30 ciudades distintas.

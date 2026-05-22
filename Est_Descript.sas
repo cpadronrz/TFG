@@ -65,6 +65,12 @@ RUN;
 *Para las categóricas. Si ponemos varias, ya sale todo;
 
 PROC FREQ DATA=datos;
-   TABLES Depression gender Suicidal_thoughts family_history City degree sleep_duration dietary_habits / PLOTS=FREQPLOT;
+   TABLES Depression gender Suicidal_thoughts family_history degree sleep_duration dietary_habits / PLOTS=FREQPLOT;
+RUN;
+
+ODS GRAPHICS / WIDTH=12in HEIGHT=6in;
+
+PROC FREQ DATA=datos;
+   TABLES City / PLOTS=FREQPLOT;
 RUN;
 

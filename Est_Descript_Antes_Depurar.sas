@@ -64,5 +64,14 @@ RUN;
 *Para las categóricas. Si ponemos varias, ya sale todo;
 
 PROC FREQ DATA=datos;
-   TABLES Depression gender Have_you_ever_had_Suicidal_thoug family_history_of_mental_illness City degree sleep_duration dietary_habits profession / PLOTS=FREQPLOT;
+   TABLES Depression gender Have_you_ever_had_Suicidal_thoug family_history_of_mental_illness degree sleep_duration 
+	dietary_habits profession / PLOTS=FREQPLOT;
+RUN;
+
+*Ampliamos los márgenes para City para que no se solapen las etiquetas;
+
+ODS GRAPHICS / WIDTH=12in HEIGHT=6in;
+
+PROC FREQ DATA=datos;
+   TABLES City / PLOTS=FREQPLOT;
 RUN;

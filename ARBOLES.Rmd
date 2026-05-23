@@ -241,6 +241,7 @@ rpart.plot(arbol_ganador$finalModel, main = "Estructura del Árbol de Decisión 
 ```
 
 
+
 Calculamos las métricas de evaluación y comprobamos si es necesario modificar el punto de corte.
 
 ```{r}
@@ -383,14 +384,5 @@ cm_test$overall[1:2]
 ```{r}
 cm_test$byClass[1:2]
 ```
-
-
-
-
-
-
-
-
-
 
 

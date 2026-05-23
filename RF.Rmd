@@ -29,6 +29,8 @@ library(furrr)
 library(doParallel)
 cluster <- makeCluster(detectCores() - 1)
 registerDoParallel(cluster)
+library(tidyr)
+library(ggplot2)
 ```
 
 Cargamos la base de datos con las mismas características que para árboles (eliminamos las mismas variables) y pasamos las variables necesarias a factor.
@@ -60,115 +62,85 @@ data_train <- datosClasif[trainIndex,]
 data_test <- datosClasif[-trainIndex,]
 ```
 
-Comenzamos creando un Random Forest de 500 árboles con un tamaño de hoja equivalente al 5% de los datos y ntree y mtry por defecto (en este caso, por tratarse de un Random Forest para clasificación, este último será la raíz cuadrada del número de variables explicativas disponibles):
-
 ```{r}
-auxtask <- makeClassifTask(data = data_train, target = "Depression")
-```
+# ==============================================================================
+# FASE 1: CONFIGURACIÓN DE LA VALIDACIÓN CRUZADA REPETIDA
+# ==============================================================================
+# Creamos la estructura de control para evaluar las configuraciones de mtry 
+# mediante una estrategia de 5-fold CV repetida 20 veces.
 
-```{r}
-set.seed(12345)
-RF5<-randomForest(Depression ~ ., data=data_train, keep.inbag = TRUE,
-nodesize=ceiling(0.05*nrow(data_train)))
-results5 <- OOBCurve(RF5, measures = list(auc,kappa), task = auxtask, data = data_train)
-```
-
-Como podemos observar, se ha creado un modelo Random Forest para clasificación, con 500 árboles y seleccionando únicamente 3 variables en cada división de nodos, lo que da lugar a un modelo con una tasa de error de 17.13%.
-
-Construímos modelos con tamaño de hoja del 1% y del 0.5%.
-
-```{r}
-set.seed(12345)
-RF_1<-randomForest(Depression~., data=data_train, keep.inbag = TRUE,
-nodesize=ceiling(0.01*nrow(data_train)))
-results1 <- OOBCurve(RF_1, measures = list(auc,kappa), task = auxtask, data = data_train)
-
-set.seed(12345)
-RF_05<-randomForest(Depression~., data=data_train, keep.inbag = TRUE,
-nodesize=ceiling(0.005*nrow(data_train)))
-results05 <- OOBCurve(RF_05, measures = list(auc,kappa), task = auxtask, data = data_train)
-```
-
-```{r}
-plot(RF_1$err.rate[,1], xlab = "ntrees", ylab = "Tasa de fallo", ylim=c(0.15,0.22))
-points(RF5$err.rate[,1], col="red")
-points(RF_05$err.rate[,1], col="green")
-```
-
-```{r}
-plot(results1$auc, ylab = "oob-auc", xlab = "ntrees")
-points(results5$auc, col="red")
-points(results05$auc, col="green")
-```
-
-```{r}
-plot(results1$kappa, ylab = "oob-kappa", xlab = "ntrees")
-points(results5$kappa, col="red")
-points(results05$kappa, col="green")
-```
-
-Vemos como disminuir el tamaño de hoja ha supuesto cierta mejora en las tres métricas pero que, a partir de un tamaño del 1%, no existen grandes diferencias. Así mismo, el mejor valor se alcanza cuando el número de árboles ronda los 100. por lo que seleccionaremos ntrees = 100 para garantizar usar toda su precisión.
-
-Recurrimos a un bucle que recorra los posibles valores de mtry (pero en este caso recurrimos posteriormente a la función OOBCurve para que nos proporcione los valores de AUC y kappa):
-
-```{r}
-future::plan(multisession, workers=detectCores() - 1)
-mtryValues<-floor(seq(2,ncol(data_train)-1, length.out=10))
-nt<-100
-tunningRF<- future_map(mtryValues,
-~ {set.seed(12345);
-randomForest(Depression~., data=data_train,
-keep.inbag = TRUE,
-nodesize=ceiling(0.01*nrow(data_train)),
-ntree=nt,
-mtry=.x)}
+control_cv_rf <- trainControl(
+  method = "repeatedcv", 
+  number = 5, 
+  repeats = 20,
+  summaryFunction = multiClassSummary,
+  classProbs = TRUE, 
+  savePredictions = TRUE
 )
-plan(sequential)
-error_rate<-sapply(tunningRF, function(x) x$err.rate[nt,1])
-plot(mtryValues,error_rate,type="b")
+```
+
+
+```{r}
+# ==============================================================================
+# FASE 2: ENFOQUE GRID SEARCH BIDIMENSIONAL (TUNEADO COMBINADO DE HIPERPARÁMETROS)
+# ==============================================================================
+
+
+# Definimos la parrilla de búsqueda combinada (Grid Search)
+# R probará las combinaciones: (2,1), (2,5), (2,10), (4,1), (4,5), (4,10), etc.
+parrilla_rf <- expand.grid(
+  mtry = c(2, 4, 6),
+  splitrule = "gini",
+  min.node.size = c(1, 5, 10)
+)
+
+set.seed(12345)
+rf_grid_search <- caret::train(
+  Depression ~ ., 
+  data = data_train, 
+  method = "ranger", 
+  trControl = control_cv_rf,
+  tuneGrid = parrilla_rf,
+  num.trees = 500,
+  num.threads = 1, # Estabilidad absoluta para WSL
+  metric = "AUC"
+)
+```
+
+
+
+```{r}
+# ==============================================================================
+# FASE 3: COMPARACIÓN DEL RENDIMIENTO DEL GRID SEARCH
+# ==============================================================================
+
+# 1. Renderizamos el gráfico de cajas directo del Grid Search
+# Al pasarle el modelo directamente a ggplot o a bwplot, caret se encarga de todo
+ggplot(rf_grid_search, metric = "AUC") + 
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size",
+       x = "Número de variables aleatorias (mtry)",
+       y = "Área Bajo la Curva (AUC)") +
+  theme_minimal()
+
+# 2. Mostramos el desglose numérico detallado de todas las combinaciones por pantalla
+print(rf_grid_search)
+
 ```
 
 ```{r}
-AUCs<-sapply(tunningRF, function(x) OOBCurve(x, measures = list(auc, kappa),
-task = auxtask, data = data_train)$auc[nt])
-plot(mtryValues, AUCs, type="b")
+
+# ==============================================================================
+# FASE 4: SELECCIÓN DEL MODELO RF GANADOR
+# ==============================================================================
+# Tras analizar el boxplot, mtry = 4 ofrece la combinación óptima de AUC y estabilidad.
+rf_ganador <- rf_grid_search 
 ```
 
-```{r}
-Kappas<-sapply(tunningRF, function(x) OOBCurve(x, measures = list(auc, kappa),
-task = auxtask, data = data_train)$kappa[nt])
-plot(mtryValues, Kappas, type="b")
-```
-
-En este contexto, no tiene sentido hablar del principio de parsimonia, pues el mtry no es un parámetro de complejidad, interesa el máximo siempre (los árboles en todos los casos son del mismo tamaño). Además, hay una consistencia total entre métricas, lo que da mucha seguridad en la decisión:
-- Tasa de Error (error_rate): El valor mínimo se encuentra exactamente en mtry = 2, con un error aproximado de 0.162. A medida que aumenta el número de variables candidatas, el error sube de forma casi constante hasta superar el 0.168.
-- AUC (AUCs): La capacidad de discriminación del modelo es máxima en mtry = 2 (cercano a 0.910) y cae linealmente conforme el mtry crece.
-- Kappa (Kappas): El valor máximo se logra también en mtry = 2, alcanzando 0.664.
-Por tanto, el valor óptimo de mtry en este caso es 2. Tener el mtry tan bajo forzará a los árboles a ser muy diferentes entre sí, ya que tienen pocas variables de donde elegir en cada división.
-
-El extremo de la derecha es el bagging (SIEMPRE). Por tanto, no es igual de potente en este caso, pues el Random Forest mejora.
-
-```{r}
-RF_def<-tunningRF[[which(mtryValues==2)]]
-print(RF_def)
-```
-
-Sensibilidad = 1 - class.error("Yes") = 0.8805833
-Especificidad = 1 - class.error("No") = 0.7771509
-
-```{r}
-par(mar = c(9, 4, 1, 1))
-barplot(t(RF_def$importance)/sum(RF_def$importance), las=2, ylim = c(0, 0.4))
-```
-
-En cuanto al conjunto de entrenamiento (para poder comparar luego con el de prueba y ver la calidad del modelo):
-
-El modelo construido tiene una tasa de error del 16.23% y una sensibilidad y especificidad del 88,06% y 77,72% respectivamente, basados en los datos OOB.
 
 Extraemos las probabilidades.
 
 ```{r}
-probs_rf <- predict(RF_def, newdata = data_train, type = "prob")[,2]
+probs_rf <- predict(rf_ganador, newdata = data_train, type = "prob")[,2]
 ```
 
 Generamos la curva ROC para el bosque y extraemos las coordenadas.
@@ -223,12 +195,12 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.405.
+El punto de corte óptimo es 0.493.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.405
+umbral_optimo <- 0.493
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(
@@ -251,12 +223,12 @@ Comprobamos en el conjunto de prueba.
 
 ```{r}
 curvaROC <- roc(data_test$Depression,
-predict(RF_def,data_test,type="prob")[, "Yes"])$auc
+predict(rf_ganador,data_test,type="prob")[, "Yes"])$auc
 curvaROC
 ```
 
 ```{r}
-probs_test <- predict(RF_def, data_test, type = "prob")
+probs_test <- predict(rf_ganador, data_test, type = "prob")
 
 pred_test <- ifelse(probs_test[, "Yes"] >= umbral_optimo, "Yes", "No")
 
@@ -275,3 +247,7 @@ cm_test$overall[1:2]
 ```{r}
 cm_test$byClass[1:2]
 ```
+
+
+
+

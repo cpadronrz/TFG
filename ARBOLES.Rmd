@@ -240,8 +240,6 @@ rpart.plot(arbol_ganador$finalModel, main = "Estructura del Árbol de Decisión 
 
 ```
 
-
-
 Calculamos las métricas de evaluación y comprobamos si es necesario modificar el punto de corte.
 
 ```{r}

@@ -62,13 +62,9 @@ data_train <- datosClasif[trainIndex,]
 data_test <- datosClasif[-trainIndex,]
 ```
 
-```{r}
-# ==============================================================================
-# FASE 1: CONFIGURACIÓN DE LA VALIDACIÓN CRUZADA REPETIDA
-# ==============================================================================
-# Creamos la estructura de control para evaluar las configuraciones de mtry 
-# mediante una estrategia de 5-fold CV repetida 20 veces.
+Creamos la estructura de control para evaluar las configuraciones de mtry mediante una estrategia de 5-fold CV repetida 20 veces.
 
+```{r}
 control_cv_rf <- trainControl(
   method = "repeatedcv", 
   number = 5, 
@@ -79,15 +75,9 @@ control_cv_rf <- trainControl(
 )
 ```
 
+Definimos la parrilla de búsqueda combinada (Grid Search)
 
 ```{r}
-# ==============================================================================
-# FASE 2: ENFOQUE GRID SEARCH BIDIMENSIONAL (TUNEADO COMBINADO DE HIPERPARÁMETROS)
-# ==============================================================================
-
-
-# Definimos la parrilla de búsqueda combinada (Grid Search)
-# R probará las combinaciones: (2,1), (2,5), (2,10), (4,1), (4,5), (4,10), etc.
 parrilla_rf <- expand.grid(
   mtry = c(2, 4, 6),
   splitrule = "gini",
@@ -102,37 +92,58 @@ rf_grid_search <- caret::train(
   trControl = control_cv_rf,
   tuneGrid = parrilla_rf,
   num.trees = 500,
-  num.threads = 1, # Estabilidad absoluta para WSL
+ 
   metric = "AUC"
 )
 ```
 
-
+Comparamos el rendimiento de las diferentes combinaciones de hiperparámetros.
 
 ```{r}
-# ==============================================================================
-# FASE 3: COMPARACIÓN DEL RENDIMIENTO DEL GRID SEARCH
-# ==============================================================================
 
-# 1. Renderizamos el gráfico de cajas directo del Grid Search
-# Al pasarle el modelo directamente a ggplot o a bwplot, caret se encarga de todo
 ggplot(rf_grid_search, metric = "AUC") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size",
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size (AUC)",
        x = "Número de variables aleatorias (mtry)",
        y = "Área Bajo la Curva (AUC)") +
   theme_minimal()
-
-# 2. Mostramos el desglose numérico detallado de todas las combinaciones por pantalla
-print(rf_grid_search)
-
 ```
 
 ```{r}
+ggplot(rf_grid_search, metric = "Accuracy") + 
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Accuracy)",
+       x = "Número de variables aleatorias (mtry)",
+       y = "Accuracy") +
+  theme_minimal()
+```
 
-# ==============================================================================
-# FASE 4: SELECCIÓN DEL MODELO RF GANADOR
-# ==============================================================================
-# Tras analizar el boxplot, mtry = 4 ofrece la combinación óptima de AUC y estabilidad.
+```{r}
+ggplot(rf_grid_search, metric = "Kappa") + 
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Kappa)",
+       x = "Número de variables aleatorias (mtry)",
+       y = "Índice Kappa") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(rf_grid_search, metric = "Sensitivity") + 
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Sensibilidad)",
+       x = "Número de variables aleatorias (mtry)",
+       y = "Sensibilidad") +
+  theme_minimal()
+```
+
+
+```{r}
+ggplot(rf_grid_search, metric = "Specificity") + 
+  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Especificidad)",
+       x = "Número de variables aleatorias (mtry)",
+       y = "Especificidad") +
+  theme_minimal()
+```
+
+Selección del modelo ganador
+
+```{r}
 rf_ganador <- rf_grid_search 
 ```
 

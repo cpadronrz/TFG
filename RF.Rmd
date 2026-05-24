@@ -73,15 +73,16 @@ control_cv_rf <- trainControl(
   classProbs = TRUE, 
   savePredictions = TRUE
 )
+
 ```
 
 Definimos la parrilla de búsqueda combinada (Grid Search)
 
 ```{r}
 parrilla_rf <- expand.grid(
-  mtry = c(2, 4, 6),
+  mtry = c(3, 6, 7),
   splitrule = "gini",
-  min.node.size = c(1, 5, 10)
+  min.node.size = c(10,20,30)
 )
 
 set.seed(12345)
@@ -92,15 +93,14 @@ rf_grid_search <- caret::train(
   trControl = control_cv_rf,
   tuneGrid = parrilla_rf,
   num.trees = 500,
- 
-  metric = "AUC"
+  #sample.fraction = 0.8,
+  metric = "Sensitivity"
 )
 ```
 
 Comparamos el rendimiento de las diferentes combinaciones de hiperparámetros.
 
 ```{r}
-
 ggplot(rf_grid_search, metric = "AUC") + 
   labs(title = "Resultados del Grid Search: mtry vs min.node.size (AUC)",
        x = "Número de variables aleatorias (mtry)",
@@ -144,9 +144,12 @@ ggplot(rf_grid_search, metric = "Specificity") +
 Selección del modelo ganador
 
 ```{r}
-rf_ganador <- rf_grid_search 
+rf_grid_search$bestTune
 ```
 
+```{r}
+rf_ganador <- rf_grid_search 
+```
 
 Extraemos las probabilidades.
 
@@ -156,9 +159,30 @@ probs_rf <- predict(rf_ganador, newdata = data_train, type = "prob")[,2]
 
 Generamos la curva ROC para el bosque y extraemos las coordenadas.
 
+
 ```{r}
 curvaROC_rf <- roc(data_train$Depression, probs_rf, levels = c("No", "Yes"))
 coords_rf <- coords(curvaROC_rf, "all", ret = c("threshold", "sensitivity", "specificity"))
+curvaROC_rf
+```
+
+```{r}
+pred_train <- ifelse(probs_rf >= 0.5, "Yes", "No")
+
+cm_train <- confusionMatrix(
+  data = as.factor(pred_train),
+  reference = data_train$Depression,
+  positive = "Yes"
+)
+```
+
+
+```{r}
+cm_train$overall[1:2]
+```
+
+```{r}
+cm_train$byClass[1:2]
 ```
 
 La sensibilidad es el doble de importante en este caso, como indicamos en los modelos anteriores.
@@ -206,12 +230,12 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.493.
+El punto de corte óptimo es 0.458.
 
 Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.493
+umbral_optimo <- 0.458
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(
@@ -231,12 +255,6 @@ cm_train$byClass[1:2]
 ```
 
 Comprobamos en el conjunto de prueba.
-
-```{r}
-curvaROC <- roc(data_test$Depression,
-predict(rf_ganador,data_test,type="prob")[, "Yes"])$auc
-curvaROC
-```
 
 ```{r}
 probs_test <- predict(rf_ganador, data_test, type = "prob")

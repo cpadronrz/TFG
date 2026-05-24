@@ -168,7 +168,7 @@ modelos<-list(modeloStepBIC, modeloStepAIC, modelo1, modelo2)
 vcrTodosModelos<-list()
 for (i in 1:length(modelos)){
 set.seed(12345)
-vcr<-train(formula(modelos[[i]]), data = data_train,
+vcr<-caret::train(formula(modelos[[i]]), data = data_train,
 method = "glm", family="binomial",
 trControl = trainControl(method="repeatedcv", number=5, repeats=20,
 summaryFunction=multiClassSummary,
@@ -274,7 +274,7 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   annotate("text", x = umbral_optimo_val + 0.02, y = 0.05, 
            label = paste("Umbral Prioritario:", round(umbral_optimo_val, 3)), 
            angle = 90, hjust = 0, size = 3.5) +
-  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad)",
+  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad) - Modelo 1",
        subtitle = "Basado en Índice de Youden Ponderado (w=2)",
        x = "Umbral de Probabilidad", y = "Valor de la Métrica") +
   theme_minimal() +
@@ -413,7 +413,7 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   annotate("text", x = umbral_optimo_val + 0.02, y = 0.05, 
            label = paste("Umbral Prioritario:", round(umbral_optimo_val, 3)), 
            angle = 90, hjust = 0, size = 3.5) +
-  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad)",
+  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad) - Modelo StepBIC",
        subtitle = "Basado en Índice de Youden Ponderado (w=2)",
        x = "Umbral de Probabilidad", y = "Valor de la Métrica") +
   theme_minimal() +
@@ -552,7 +552,7 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   annotate("text", x = umbral_optimo_val + 0.02, y = 0.05, 
            label = paste("Umbral Prioritario:", round(umbral_optimo_val, 3)), 
            angle = 90, hjust = 0, size = 3.5) +
-  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad)",
+  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad) - Modelo 2",
        subtitle = "Basado en Índice de Youden Ponderado (w=2)",
        x = "Umbral de Probabilidad", y = "Valor de la Métrica") +
   theme_minimal() +
@@ -696,7 +696,7 @@ ggplot(df_long, aes(x = Threshold, y = Valor, color = Metrica)) +
   annotate("text", x = umbral_optimo_val + 0.02, y = 0.05, 
            label = paste("Umbral Prioritario:", round(umbral_optimo_val, 3)), 
            angle = 90, hjust = 0, size = 3.5) +
-  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad)",
+  labs(title = "Optimización del Punto de Corte (Priorizando Sensibilidad) - Modelo StepAIC",
        subtitle = "Basado en Índice de Youden Ponderado (w=2)",
        x = "Umbral de Probabilidad", y = "Valor de la Métrica") +
   theme_minimal() +

@@ -28,7 +28,7 @@ seed = 12345
 
 # Parrilla para tunear los distintos parámetros
 param_grid = {
-    'n_estimators': [100, 200, 500],  # nº de árboles
+    'n_estimators': [100, 200, 500, 1000],  # nº de árboles
     'max_depth': [2, 3, 4],           # Profundidad máxima
     'max_features': ['sqrt', 'log2'], # Máximo de variables a evaluar
     'min_samples_split': [2, 5, 10]   # Menor número de obs que deben quedar para dividir
@@ -39,7 +39,7 @@ grid_rf = GridSearchCV(
     estimator=RandomForestClassifier(random_state=seed, class_weight='balanced'), 
     param_grid=param_grid, 
     scoring='f1',  # Usamos F1 para equilibrar el modelo, con recall no ajusta bien
-    cv=3, 
+    cv=5, 
     n_jobs=-1
 )
 

@@ -62,19 +62,16 @@ data_train <- datosClasif[trainIndex,]
 data_test <- datosClasif[-trainIndex,]
 ```
 
-
+Usamos F1-Score para evitar el que se asignen todos los casos a la clase mayoritaria según los parámetros obtenidos en Python (mtry = log2(p) y maxnodes = 16 (equivalente a max_depth = 4) y n = 10)
 
 ```{r}
-# 2. Configurar el control con una métrica de evaluación equilibrada
-# Usamos 'prSummary' para poder evaluar por F1-Score (llamado "F" en caret)
 control_cv_rf <- trainControl(
   method = "cv",
-  number = 3,
+  number = 5,
   classProbs = TRUE,
   summaryFunction = prSummary 
 )
 
-# 3. Calcular mtry equivalente a 'log2' (basado en tus variables en R)
 p <- ncol(data_train) - 1 
 mtry_optimo <- round(log2(p))
 if(mtry_optimo < 1) mtry_optimo <- 1
@@ -82,26 +79,19 @@ if(mtry_optimo < 1) mtry_optimo <- 1
 grid_ganador <- expand.grid(
   mtry = mtry_optimo
 )
+```
 
-# 4. Entrenar el Random Forest con max_depth = 4 (maxnodes = 16)
+```{r}
 rf_ganador <- caret::train(
   Depression ~ ., 
   data = data_train, 
   method = "rf",                      
   trControl = control_cv_rf,
   tuneGrid = grid_ganador,
-  ntree = 500,                        # Los 500 árboles que mantienes
-  maxnodes = 16,                      # <--- EQUIVALENTE A MAX_DEPTH = 4 (2^4)
-  metric = "F"                        # Optimiza el F1-Score para evitar el falso 100%
+  ntree = 1000,
+  maxnodes = 16,
+  metric = "F" 
 )
-
-# 5. Evaluar el modelo y sacar la nueva matriz de confusión
-predicciones <- predict(rf_ganador, newdata = data_test)
-cm_test <- confusionMatrix(predicciones, data_test$Depression)
-
-# Imprimir métricas globales (Accuracy, Kappa) y por clase (Sensitivity, Specificity)
-print(cm_test$overall[1:2])
-print(cm_test$byClass[1:2])
 ```
 
 Extraemos las probabilidades.
@@ -138,6 +128,8 @@ cm_train$overall[1:2]
 cm_train$byClass[1:2]
 ```
 
+Si bien es cierto que nos interesa maximizar la sensibilidad para detectar el mayor número de casos positivos, también es importante no sacrificar demasiado la especificidad, ya que un número elevado de falsos positivos podría generar ansiedad innecesaria en los pacientes. Por ello, optamos por una estrategia de optimización que tenga en cuenta ambas métricas, pero dando un peso mayor a la sensibilidad.
+
 La sensibilidad es el doble de importante en este caso, como indicamos en los modelos anteriores.
 
 ```{r}
@@ -162,6 +154,7 @@ df_metricas_rf <- purrr::map_df(seq(0, 1, by = 0.01), function(u) {
     Sensitivity = cm_u$byClass["Sensitivity"],
     Specificity = cm_u$byClass["Specificity"],
     Accuracy = cm_u$overall["Accuracy"],
+    Precision = cm_u$byClass["Precision"],
     F1 = cm_u$byClass["F1"]
   )
 })
@@ -177,15 +170,13 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
            label = paste("Umbral RF:", round(umbral_rf_val, 3)), 
            angle = 90, vjust = 1, size = 3.5, fontface = "bold") +
   labs(title = "Optimización de Umbral - Random Forest",
-       subtitle = "Priorizando Sensibilidad (w=2)",
        x = "Umbral de Probabilidad", y = "Valor") +
   theme_minimal() +
   scale_color_brewer(palette = "Set1")
 ```
 
-
 ```{r}
-umbral_optimo <- 0.609
+umbral_optimo <- 0.613
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(
@@ -227,6 +218,4 @@ cm_test$overall[1:2]
 ```{r}
 cm_test$byClass[1:2]
 ```
-
-
 

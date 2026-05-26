@@ -62,93 +62,46 @@ data_train <- datosClasif[trainIndex,]
 data_test <- datosClasif[-trainIndex,]
 ```
 
-Creamos la estructura de control para evaluar las configuraciones de mtry mediante una estrategia de 5-fold CV repetida 20 veces.
+
 
 ```{r}
+# 2. Configurar el control con una métrica de evaluación equilibrada
+# Usamos 'prSummary' para poder evaluar por F1-Score (llamado "F" en caret)
 control_cv_rf <- trainControl(
-  method = "repeatedcv", 
-  number = 5, 
-  repeats = 20,
-  summaryFunction = multiClassSummary,
-  classProbs = TRUE, 
-  savePredictions = TRUE
+  method = "cv",
+  number = 3,
+  classProbs = TRUE,
+  summaryFunction = prSummary 
 )
 
-```
+# 3. Calcular mtry equivalente a 'log2' (basado en tus variables en R)
+p <- ncol(data_train) - 1 
+mtry_optimo <- round(log2(p))
+if(mtry_optimo < 1) mtry_optimo <- 1
 
-Definimos la parrilla de búsqueda combinada (Grid Search)
-
-```{r}
-parrilla_rf <- expand.grid(
-  mtry = c(3, 6, 7),
-  splitrule = "gini",
-  min.node.size = c(10,20,30)
+grid_ganador <- expand.grid(
+  mtry = mtry_optimo
 )
 
-set.seed(12345)
-rf_grid_search <- caret::train(
+# 4. Entrenar el Random Forest con max_depth = 4 (maxnodes = 16)
+rf_ganador <- caret::train(
   Depression ~ ., 
   data = data_train, 
-  method = "ranger", 
+  method = "rf",                      
   trControl = control_cv_rf,
-  tuneGrid = parrilla_rf,
-  num.trees = 500,
-  #sample.fraction = 0.8,
-  metric = "Sensitivity"
+  tuneGrid = grid_ganador,
+  ntree = 500,                        # Los 500 árboles que mantienes
+  maxnodes = 16,                      # <--- EQUIVALENTE A MAX_DEPTH = 4 (2^4)
+  metric = "F"                        # Optimiza el F1-Score para evitar el falso 100%
 )
-```
 
-Comparamos el rendimiento de las diferentes combinaciones de hiperparámetros.
+# 5. Evaluar el modelo y sacar la nueva matriz de confusión
+predicciones <- predict(rf_ganador, newdata = data_test)
+cm_test <- confusionMatrix(predicciones, data_test$Depression)
 
-```{r}
-ggplot(rf_grid_search, metric = "AUC") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size (AUC)",
-       x = "Número de variables aleatorias (mtry)",
-       y = "Área Bajo la Curva (AUC)") +
-  theme_minimal()
-```
-
-```{r}
-ggplot(rf_grid_search, metric = "Accuracy") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Accuracy)",
-       x = "Número de variables aleatorias (mtry)",
-       y = "Accuracy") +
-  theme_minimal()
-```
-
-```{r}
-ggplot(rf_grid_search, metric = "Kappa") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Kappa)",
-       x = "Número de variables aleatorias (mtry)",
-       y = "Índice Kappa") +
-  theme_minimal()
-```
-
-```{r}
-ggplot(rf_grid_search, metric = "Sensitivity") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Sensibilidad)",
-       x = "Número de variables aleatorias (mtry)",
-       y = "Sensibilidad") +
-  theme_minimal()
-```
-
-
-```{r}
-ggplot(rf_grid_search, metric = "Specificity") + 
-  labs(title = "Resultados del Grid Search: mtry vs min.node.size (Especificidad)",
-       x = "Número de variables aleatorias (mtry)",
-       y = "Especificidad") +
-  theme_minimal()
-```
-
-Selección del modelo ganador
-
-```{r}
-rf_grid_search$bestTune
-```
-
-```{r}
-rf_ganador <- rf_grid_search 
+# Imprimir métricas globales (Accuracy, Kappa) y por clase (Sensitivity, Specificity)
+print(cm_test$overall[1:2])
+print(cm_test$byClass[1:2])
 ```
 
 Extraemos las probabilidades.
@@ -230,12 +183,9 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
   scale_color_brewer(palette = "Set1")
 ```
 
-El punto de corte óptimo es 0.458.
-
-Volvemos a clasificar en entrenamiento usando el nuevo punto de corte.
 
 ```{r}
-umbral_optimo <- 0.458
+umbral_optimo <- 0.609
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(
@@ -253,6 +203,7 @@ cm_train$overall[1:2]
 ```{r}
 cm_train$byClass[1:2]
 ```
+
 
 Comprobamos en el conjunto de prueba.
 
@@ -276,7 +227,6 @@ cm_test$overall[1:2]
 ```{r}
 cm_test$byClass[1:2]
 ```
-
 
 
 

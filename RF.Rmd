@@ -62,7 +62,7 @@ data_train <- datosClasif[trainIndex,]
 data_test <- datosClasif[-trainIndex,]
 ```
 
-Usamos F1-Score para evitar el que se asignen todos los casos a la clase mayoritaria según los parámetros obtenidos en Python (mtry = log2(p) y maxnodes = 16 (equivalente a max_depth = 4) y n = 10)
+Usamos F1-Score para evitar el que se asignen todos los casos a la clase mayoritaria según los parámetros obtenidos en Python (mtry = log2(p) y maxnodes = 16 (equivalente a max_depth = 4), número de árboles 1200)
 
 ```{r}
 control_cv_rf <- trainControl(
@@ -73,8 +73,8 @@ control_cv_rf <- trainControl(
 )
 
 p <- ncol(data_train) - 1 
-mtry_optimo <- round(log2(p))
-if(mtry_optimo < 1) mtry_optimo <- 1
+mtry_optimo <- 3
+
 
 grid_ganador <- expand.grid(
   mtry = mtry_optimo
@@ -88,7 +88,7 @@ rf_ganador <- caret::train(
   method = "rf",                      
   trControl = control_cv_rf,
   tuneGrid = grid_ganador,
-  ntree = 1000,
+  ntree = 1200,
   maxnodes = 16,
   metric = "F" 
 )
@@ -176,7 +176,7 @@ ggplot(df_long_rf, aes(x = Threshold, y = Valor, color = Metrica)) +
 ```
 
 ```{r}
-umbral_optimo <- 0.613
+umbral_optimo <- 0.612
 pred_train <- ifelse(probs_rf >= umbral_optimo, "Yes", "No")
 
 cm_train <- confusionMatrix(

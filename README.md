@@ -1,7 +1,7 @@
 # Aplicación de técnicas de Machine Learning para la detección temprana de la depresión en población estudiantil
 
 <div align="center">
-  <img src="https://img.shields.io/badge/Languages-R%20%7C%20SAS-276DC3?style=for-the-badge" height="35">
+  <img src="https://img.shields.io/badge/Languages-Python%20%7C%20R%20%7C%20SAS-276DC3?style=for-the-badge&logo=python" height="35">
   <img src="https://img.shields.io/badge/Main%20Model-Logistic%20Regression-purple?style=for-the-badge" height="35">
   <img src="https://img.shields.io/badge/Sensitivity-92.08%25-brightgreen?style=for-the-badge" height="35">
 </div>
@@ -9,10 +9,10 @@
 
 ## 📑 Table of Contents
 
-* [Descripción](#descripcion)
-* [Estructura del proyecto](#estructura)
-* [Metodología y Reproducibilidad](#metodologia)
-* [Conclusiones Clave](#conclusiones)
+* 📝[Descripción](#descripcion)
+* 📂[Estructura del proyecto](#estructura)
+* 🛠️[Metodología y Reproducibilidad](#metodologia)
+* 📈[Conclusiones Clave](#conclusiones)
 
 
 ## 📝 Descripción <a id="descripcion"></a>
@@ -30,14 +30,15 @@ He dividido mi código en módulos específicos para que el análisis sea totalm
 | :--- | :--- |
 | **`student_depresion.csv`** | El dataset utilizado en el proyecto. |
 | **`depuracion.Rmd`** | Mi proceso de limpieza: gestión de NAs, corrección tipográfica de ciudades e imputación por mediana. |
-| **`estadisticos_antes_de_depurar.sas`** | Estadísticos descriptivos iniciales (histogramas, boxplots y tablas de frecuencia) sobre el dataset original. |
-| **`estadisticos_tras_depurar.sas`** | Análisis descriptivo final tras la depuración, incluyendo frecuencias y gráficos de control. |
+| **`Est_Descript_Antes_Depurar.sas`** | Estadísticos descriptivos iniciales (histogramas, boxplots y tablas de frecuencia) sobre el dataset original. |
+| **`Est_Descript.sas`** | Análisis descriptivo final tras la depuración, incluyendo frecuencias y gráficos de control. |
 | **`relaciones.Rmd`** | Mi análisis exploratorio. Uso de Spearman para variables ordinales y $\chi^{2}$ de Pearson para categóricas. |
-| **`regresion_logistica_binaria.Rmd`** | Desarrollo del modelo de Regresión Logística. Comparativa de criterios AIC/BIC y optimización del umbral. |
-| **`arboles.Rmd`** | Ajuste y poda (*pruning*) de árboles de clasificación hasta alcanzar la estructura óptima de 8 hojas. |
-| **`arboles_con_modelos_rlb.Rmd`** | Implementación de árboles de decisión (rpart) usando las fórmulas de los modelos de regresión logística para comparar estructuras y estabilidad. |
-| **`random_forest.Rmd`** | Entrenamiento del Random Forest optimizando hiperparámetros ($mtry=2$, $ntree=200$). |
+| **`RLB.Rmd`** | Desarrollo del modelo de Regresión Logística. Comparativa de modelos manuales y de selección automática con criterios AIC/BIC y optimización de métricas ajustando el umbral de clasificación. |
+| **`arboles.Rmd`** | Ajuste y comparación de 7 arquitecturas (según complejidad *cp* y variables de regresión). Ajuste del umbral de decisión del modelo óptimo. |
+| **`RF.py`** | Búsqueda en cuadrícula (*Grid Search*) automatizada con validación cruzada de 5 pliegues para la optimización multidimensional de hiperparámetros usando *scikit-learn*. |
+| **`RF.Rmd`** | Entrenamiento del modelo óptimo de Random Forest ($ntree = 1200, mtry = 3, maxnodes = 16$) y optimización de métricas mediante el ajuste del umbral de decisión. |
 | **`evaluacion_modelo_final.Rmd`** | Análisis detallado del "modelo ganador" (Modelo 1): significatividad (Anova Tipo II) y cálculo de Odds Ratios. |
+
 
 ---
 
@@ -62,4 +63,4 @@ Tras comparar los distintos algoritmos, seleccioné la **Regresión Logística (
 ---
 
 ## ✍️ Autora
-**Carla Padrón Rodríguez** *Grado en Estadística Aplicada*
+**Carla Padrón Rodríguez** *Grado en Estadística Aplicada, UCM*

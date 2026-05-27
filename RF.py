@@ -28,7 +28,7 @@ seed = 12345
 
 # Parrilla para tunear los distintos parámetros
 param_grid = {
-    'n_estimators': [100, 200, 500, 1000],  # nº de árboles
+    'n_estimators': [100, 200, 500, 1000, 1500],  # nº de árboles
     'max_depth': [2, 3, 4],           # Profundidad máxima
     'max_features': ['sqrt', 'log2'], # Máximo de variables a evaluar
     'min_samples_split': [2, 5, 10]   # Menor número de obs que deben quedar para dividir
